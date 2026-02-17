@@ -5,8 +5,12 @@
  * Tests the full pipeline: raw JSON → parse → insert → verify DB state.
  */
 import { describe, it, expect } from "bun:test"
+import { Database } from "bun:sqlite"
 import { SqlClient } from "@effect/sql"
 import { Effect } from "effect"
+import { mkdtempSync, rmSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 import { makeTestLayer } from "../helpers/db.js"
 import { recordPipeline } from "../../src/commands/Record.js"
 
@@ -514,6 +518,42 @@ describe("Record pipeline", () => {
     const allTs = [...result.toolCalls.map(r => r.t), ...result.fileEvents.map(r => r.t)].sort((a, b) => a - b)
     for (let i = 1; i < allTs.length; i++) {
       expect(allTs[i]!).toBeGreaterThan(allTs[i - 1]!)
+    }
+  })
+
+  it("record command auto-applies schema and records without prior init", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "witness-record-"))
+    const dbPath = join(dir, "witness.db")
+
+    try {
+      const payload = JSON.stringify({
+        tool_name: "Edit",
+        tool_input: { path: "src/auto-init.ts" },
+      })
+
+      const proc = Bun.spawn(["bun", "run", "src/main.ts", "record"], {
+        env: { ...process.env, WITNESS_DB: dbPath },
+        stdin: new TextEncoder().encode(payload),
+        stdout: "pipe",
+        stderr: "pipe",
+      })
+
+      const exitCode = await proc.exited
+      expect(exitCode).toBe(0)
+
+      const db = new Database(dbPath)
+      const toolCallCount = db.query("SELECT COUNT(*) AS count FROM tool_calls").get() as { count: number }
+      const fileEvent = db.query("SELECT event, file_path FROM file_events LIMIT 1").get() as {
+        event: string
+        file_path: string
+      }
+      db.close()
+
+      expect(toolCallCount.count).toBe(1)
+      expect(fileEvent.event).toBe("edit")
+      expect(fileEvent.file_path).toBe("src/auto-init.ts")
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
     }
   })
 })

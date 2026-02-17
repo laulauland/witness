@@ -148,12 +148,12 @@ export const recordPipeline = (
 export const RecordCommand = Command.make("record", {}, () =>
   Effect.gen(function* () {
     const raw = yield* readStdin
-    yield* recordPipeline(raw).pipe(
-      Effect.provide(DbLive.pipe(
-        // Apply schema to ensure tables exist
-        // (in production, init should have been run already, but be safe)
-      ))
-    )
+
+    yield* Effect.gen(function* () {
+      // Ensure tables/views exist even if `witness init` was not run.
+      yield* applySchema
+      yield* recordPipeline(raw)
+    }).pipe(Effect.provide(DbLive))
   }).pipe(
     // Outer catch: even stdin read failure → exit 0
     Effect.catchAll((error) =>
