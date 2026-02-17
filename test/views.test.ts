@@ -113,16 +113,17 @@ describe("Views", () => {
     expect(result[0]!.file_path).toBe("b.ts")
   })
 
-  test("thrashing detects files edited 3+ times with failures", async () => {
+  test("thrashing detects files with 3+ edit-then-fail cycles", async () => {
     const result = await Effect.gen(function* () {
       const sql = yield* SqlClient.SqlClient
 
-      // a.ts edited 3 times
+      // a.ts: 3 interleaved edit→fail cycles
       yield* sql`INSERT INTO file_events (session_id, t, event, file_path) VALUES ('s1', 1, 'edit', 'a.ts')`
-      yield* sql`INSERT INTO file_events (session_id, t, event, file_path) VALUES ('s1', 2, 'edit', 'a.ts')`
+      yield* sql`INSERT INTO test_results (session_id, t, test_name, outcome) VALUES ('s1', 2, 'test_x', 'fail')`
       yield* sql`INSERT INTO file_events (session_id, t, event, file_path) VALUES ('s1', 3, 'edit', 'a.ts')`
-      // Failing test exists
       yield* sql`INSERT INTO test_results (session_id, t, test_name, outcome) VALUES ('s1', 4, 'test_x', 'fail')`
+      yield* sql`INSERT INTO file_events (session_id, t, event, file_path) VALUES ('s1', 5, 'edit', 'a.ts')`
+      yield* sql`INSERT INTO test_results (session_id, t, test_name, outcome) VALUES ('s1', 6, 'test_x', 'fail')`
 
       return yield* sql<{ file_path: string; edit_count: number }>`
         SELECT file_path, edit_count FROM thrashing WHERE session_id = 's1'
@@ -134,20 +135,47 @@ describe("Views", () => {
     expect(result[0]!.edit_count).toBe(3)
   })
 
-  test("thrashing does not fire with only 2 edits", async () => {
+  test("thrashing reports edit_count for 2 edit-fail cycles", async () => {
     const result = await Effect.gen(function* () {
       const sql = yield* SqlClient.SqlClient
 
       yield* sql`INSERT INTO file_events (session_id, t, event, file_path) VALUES ('s1', 1, 'edit', 'a.ts')`
-      yield* sql`INSERT INTO file_events (session_id, t, event, file_path) VALUES ('s1', 2, 'edit', 'a.ts')`
-      yield* sql`INSERT INTO test_results (session_id, t, test_name, outcome) VALUES ('s1', 3, 'test_x', 'fail')`
+      yield* sql`INSERT INTO test_results (session_id, t, test_name, outcome) VALUES ('s1', 2, 'test_x', 'fail')`
+      yield* sql`INSERT INTO file_events (session_id, t, event, file_path) VALUES ('s1', 3, 'edit', 'a.ts')`
+      yield* sql`INSERT INTO test_results (session_id, t, test_name, outcome) VALUES ('s1', 4, 'test_x', 'fail')`
 
-      return yield* sql<{ file_path: string }>`
-        SELECT file_path FROM thrashing WHERE session_id = 's1'
+      return yield* sql<{ file_path: string; edit_count: number }>`
+        SELECT file_path, edit_count FROM thrashing WHERE session_id = 's1'
       `
     }).pipe(Effect.provide(makeTestLayer()), Effect.runPromise)
 
-    expect(result).toHaveLength(0)
+    // View returns the count; rule applies threshold
+    expect(result).toHaveLength(1)
+    expect(result[0]!.edit_count).toBe(2)
+  })
+
+  test("thrashing resets when an edit cycle succeeds (tests pass)", async () => {
+    const result = await Effect.gen(function* () {
+      const sql = yield* SqlClient.SqlClient
+
+      // 2 failed cycles
+      yield* sql`INSERT INTO file_events (session_id, t, event, file_path) VALUES ('s1', 1, 'edit', 'a.ts')`
+      yield* sql`INSERT INTO test_results (session_id, t, test_name, outcome) VALUES ('s1', 2, 'test_x', 'fail')`
+      yield* sql`INSERT INTO file_events (session_id, t, event, file_path) VALUES ('s1', 3, 'edit', 'a.ts')`
+      // Success! Tests pass → resets counter
+      yield* sql`INSERT INTO test_results (session_id, t, test_name, outcome) VALUES ('s1', 4, 'test_x', 'pass')`
+      // 1 more failed cycle after reset
+      yield* sql`INSERT INTO file_events (session_id, t, event, file_path) VALUES ('s1', 5, 'edit', 'a.ts')`
+      yield* sql`INSERT INTO test_results (session_id, t, test_name, outcome) VALUES ('s1', 6, 'test_x', 'fail')`
+
+      return yield* sql<{ file_path: string; edit_count: number }>`
+        SELECT file_path, edit_count FROM thrashing WHERE session_id = 's1'
+      `
+    }).pipe(Effect.provide(makeTestLayer()), Effect.runPromise)
+
+    // Only 1 failed cycle since the reset
+    expect(result).toHaveLength(1)
+    expect(result[0]!.edit_count).toBe(1)
   })
 
   test("views are session-scoped", async () => {

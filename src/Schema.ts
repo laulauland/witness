@@ -176,22 +176,74 @@ export const applySchema = Effect.gen(function* () {
       )
   `
 
-  // Files edited 3+ times with failures persisting after each edit
+  // Files edited repeatedly with test failures persisting after each edit cycle.
+  // A "failed cycle" = edit followed by test failure with no all-pass window
+  // before the next edit. Resets when an edit cycle has only passes (no failures).
   yield* sql`
     CREATE VIEW IF NOT EXISTS thrashing AS
+    WITH edit_windows AS (
+      SELECT
+        fe.session_id,
+        fe.file_path,
+        fe.t AS edit_t,
+        COALESCE(
+          (SELECT MIN(fe2.t) FROM file_events fe2
+           WHERE fe2.session_id = fe.session_id
+             AND fe2.file_path = fe.file_path
+             AND fe2.event = 'edit'
+             AND fe2.t > fe.t),
+          999999999
+        ) AS next_edit_t
+      FROM file_events fe
+      WHERE fe.event = 'edit'
+    ),
+    cycle_outcomes AS (
+      SELECT
+        ew.session_id,
+        ew.file_path,
+        ew.edit_t,
+        ew.next_edit_t,
+        (EXISTS (
+          SELECT 1 FROM test_results tr
+          WHERE tr.session_id = ew.session_id
+            AND tr.outcome = 'fail'
+            AND tr.t > ew.edit_t
+            AND tr.t < ew.next_edit_t
+        )) AS has_failure,
+        (EXISTS (
+          SELECT 1 FROM test_results tr
+          WHERE tr.session_id = ew.session_id
+            AND tr.outcome = 'pass'
+            AND tr.t > ew.edit_t
+            AND tr.t < ew.next_edit_t
+        )) AS has_pass
+      FROM edit_windows ew
+    ),
+    last_success AS (
+      SELECT
+        session_id,
+        file_path,
+        MAX(edit_t) AS last_success_t
+      FROM cycle_outcomes
+      WHERE has_pass = 1 AND has_failure = 0
+      GROUP BY session_id, file_path
+    )
     SELECT
-      fe.session_id,
-      fe.file_path,
-      COUNT(DISTINCT fe.t) AS edit_count,
-      MAX(fe.t) AS last_edit_t
-    FROM file_events fe
-    WHERE fe.event = 'edit'
+      co.session_id,
+      co.file_path,
+      COUNT(*) AS edit_count,
+      MAX(co.edit_t) AS last_edit_t
+    FROM cycle_outcomes co
+    LEFT JOIN last_success ls
+      ON co.session_id = ls.session_id
+     AND co.file_path = ls.file_path
+    WHERE co.has_failure = 1
+      AND co.edit_t > COALESCE(ls.last_success_t, 0)
       AND EXISTS (
         SELECT 1 FROM failing_tests ft
-        WHERE ft.session_id = fe.session_id
+        WHERE ft.session_id = co.session_id
       )
-    GROUP BY fe.session_id, fe.file_path
-    HAVING COUNT(DISTINCT fe.t) >= 3
+    GROUP BY co.session_id, co.file_path
   `
 
   // Count of file edits since last test run in the session
