@@ -104,6 +104,18 @@ const insertTestResult = (
       VALUES (${sessionId}, ${t}, ${fact.test_name}, ${fact.outcome}, ${fact.message})`
 
 /**
+ * Insert an Import fact.
+ */
+const insertImport = (
+  sql: SqlClient.SqlClient,
+  sessionId: string,
+  t: number,
+  fact: Extract<Fact, { _tag: "Import" }>
+) =>
+  sql`INSERT INTO imports (session_id, t, source_file, imported_module)
+      VALUES (${sessionId}, ${t}, ${fact.source_file}, ${fact.imported_module})`
+
+/**
  * Insert any structured fact. Dispatches by _tag.
  */
 const insertFact = (
@@ -117,6 +129,8 @@ const insertFact = (
       return insertFileEvent(sql, sessionId, t, fact)
     case "TestResult":
       return insertTestResult(sql, sessionId, t, fact)
+    case "Import":
+      return insertImport(sql, sessionId, t, fact)
     default:
       // Other fact types will be handled in later phases
       return Effect.void
