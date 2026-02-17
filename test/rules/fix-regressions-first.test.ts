@@ -101,6 +101,22 @@ describe("FixRegressionsFirst", () => {
     expect(result).toBeNull()
   })
 
+  test("does NOT fire when test was failing before edit despite an older pass", async () => {
+    const result = await Effect.gen(function* () {
+      const sql = yield* SqlClient.SqlClient
+
+      // test_a passed once, then failed; edit happens while already failing.
+      yield* sql`INSERT INTO test_results (session_id, t, test_name, outcome) VALUES ('s1', 1, 'test_a', 'pass')`
+      yield* sql`INSERT INTO test_results (session_id, t, test_name, outcome) VALUES ('s1', 2, 'test_a', 'fail')`
+      yield* sql`INSERT INTO file_events (session_id, t, event, file_path) VALUES ('s1', 3, 'edit', 'src/auth.ts')`
+      yield* sql`INSERT INTO test_results (session_id, t, test_name, outcome) VALUES ('s1', 4, 'test_a', 'fail')`
+
+      return yield* FixRegressionsFirst.check(editInput("src/routes.ts"), "s1")
+    }).pipe(Effect.provide(makeTestLayer()), Effect.runPromise)
+
+    expect(result).toBeNull()
+  })
+
   test("does NOT fire when test is no longer failing (regression fixed)", async () => {
     const result = await Effect.gen(function* () {
       const sql = yield* SqlClient.SqlClient

@@ -52,6 +52,24 @@ describe("Regressions view", () => {
     expect(result).toHaveLength(0)
   })
 
+  test("no false regression when test failed before edit even with older pass", async () => {
+    const result = await Effect.gen(function* () {
+      const sql = yield* SqlClient.SqlClient
+
+      // test_auth passed once, then failed; edit happens while already failing.
+      yield* sql`INSERT INTO test_results (session_id, t, test_name, outcome) VALUES ('s1', 1, 'test_auth', 'pass')`
+      yield* sql`INSERT INTO test_results (session_id, t, test_name, outcome) VALUES ('s1', 2, 'test_auth', 'fail')`
+      yield* sql`INSERT INTO file_events (session_id, t, event, file_path) VALUES ('s1', 3, 'edit', 'src/auth.ts')`
+      yield* sql`INSERT INTO test_results (session_id, t, test_name, outcome) VALUES ('s1', 4, 'test_auth', 'fail')`
+
+      return yield* sql<{ test_name: string }>`
+        SELECT test_name FROM regressions WHERE session_id = 's1'
+      `
+    }).pipe(Effect.provide(makeTestLayer()), Effect.runPromise)
+
+    expect(result).toHaveLength(0)
+  })
+
   test("no regression when test is later fixed", async () => {
     const result = await Effect.gen(function* () {
       const sql = yield* SqlClient.SqlClient

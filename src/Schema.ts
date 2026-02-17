@@ -130,22 +130,23 @@ export const applySchema = Effect.gen(function* () {
     WHERE outcome = 'fail'
   `
 
-  // Tests that were passing before a file edit, then failing after
+  // Tests that were passing before a file edit, then failing after.
+  // Excludes tests that were already failing before the edit.
   yield* sql`
     CREATE VIEW IF NOT EXISTS regressions AS
     SELECT
       fail_result.session_id,
       fail_result.test_name,
       fail_result.message,
-      pass_result.t  AS pass_t,
-      edit.t          AS edit_t,
-      fail_result.t   AS fail_t,
-      edit.file_path  AS likely_cause
+      pass_result.t AS pass_t,
+      edit.t AS edit_t,
+      fail_result.t AS fail_t,
+      edit.file_path AS likely_cause
     FROM test_results fail_result
     INNER JOIN test_results pass_result
       ON fail_result.session_id = pass_result.session_id
-     AND fail_result.test_name  = pass_result.test_name
-     AND pass_result.outcome    = 'pass'
+     AND fail_result.test_name = pass_result.test_name
+     AND pass_result.outcome = 'pass'
      AND pass_result.t < fail_result.t
     INNER JOIN file_events edit
       ON fail_result.session_id = edit.session_id
@@ -156,14 +157,22 @@ export const applySchema = Effect.gen(function* () {
       AND fail_result.t = (
         SELECT MAX(t) FROM test_results tr2
         WHERE tr2.session_id = fail_result.session_id
-          AND tr2.test_name  = fail_result.test_name
+          AND tr2.test_name = fail_result.test_name
       )
       AND pass_result.t = (
         SELECT MAX(t) FROM test_results tr3
         WHERE tr3.session_id = pass_result.session_id
-          AND tr3.test_name  = pass_result.test_name
-          AND tr3.outcome    = 'pass'
+          AND tr3.test_name = pass_result.test_name
+          AND tr3.outcome = 'pass'
           AND tr3.t < fail_result.t
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM test_results pre_fail
+        WHERE pre_fail.session_id = fail_result.session_id
+          AND pre_fail.test_name = fail_result.test_name
+          AND pre_fail.outcome = 'fail'
+          AND pre_fail.t > pass_result.t
+          AND pre_fail.t < edit.t
       )
   `
 
