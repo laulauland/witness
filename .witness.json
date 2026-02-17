@@ -1,0 +1,11 @@
+{
+  "rules": {
+    "no_edit_unread": "warn",
+    "fix_regressions_first": "warn",
+    "test_after_edits": ["warn", { "threshold": 3 }],
+    "no_thrashing": ["block", { "threshold": 3 }],
+    "no_commit_failing": "block",
+    "no_pointless_rerun": "warn",
+    "scope_check": "off"
+  }
+}
