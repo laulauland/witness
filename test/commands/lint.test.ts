@@ -1,5 +1,8 @@
 import { SqlClient } from "@effect/sql"
 import { describe, expect, test } from "bun:test"
+import { mkdtemp, rm, writeFile } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 import { Effect } from "effect"
 import { makeTestLayer } from "../helpers/db.js"
 import { lintPipeline } from "../../src/commands/Lint.js"
@@ -50,13 +53,35 @@ describe("Lint pipeline", () => {
   })
 
   test("block violation → JSON with permissionDecision:deny", async () => {
-    // Use a config dir that doesn't exist → defaults
-    // We need to override no_edit_unread to "block" for this test.
-    // Since we can't easily inject config here, let's test the format via
-    // a future rule. For now, verify the warn format.
-    // TODO: Add block test when we have a rule that defaults to block.
-    // For Phase 3, test with no_edit_unread as warn only.
-    expect(true).toBe(true)
+    const tempDir = await mkdtemp(join(tmpdir(), "witness-lint-config-"))
+    await writeFile(
+      join(tempDir, ".witness.json"),
+      JSON.stringify({
+        rules: {
+          no_edit_unread: "block",
+          test_after_edits: "off",
+        },
+      })
+    )
+
+    try {
+      const result = await Effect.gen(function* () {
+        return yield* lintPipeline(
+          makeInput("Edit", { path: "src/foo.ts" }),
+          "s1",
+          tempDir
+        )
+      }).pipe(Effect.provide(makeTestLayer()), Effect.runPromise)
+
+      expect(result).not.toBe("")
+      const parsed = JSON.parse(result)
+      expect(parsed.hookSpecificOutput?.hookEventName).toBe("PreToolUse")
+      expect(parsed.hookSpecificOutput?.permissionDecision).toBe("deny")
+      expect(parsed.hookSpecificOutput?.permissionDecisionReason).toContain("no_edit_unread")
+      expect(parsed.hookSpecificOutput?.permissionDecisionReason).toContain("🛑")
+    } finally {
+      await rm(tempDir, { recursive: true, force: true })
+    }
   })
 
   // ── no_edit_unread integration ─────────────────────────────
