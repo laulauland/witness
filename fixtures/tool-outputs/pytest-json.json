@@ -1,0 +1,60 @@
+{
+  "created": 1700000000.0,
+  "duration": 2.5,
+  "exitcode": 1,
+  "root": "/project",
+  "environment": {
+    "Python": "3.12.0",
+    "Platform": "Darwin-23.0.0"
+  },
+  "summary": {
+    "passed": 3,
+    "failed": 2,
+    "total": 5
+  },
+  "tests": [
+    {
+      "nodeid": "tests/test_auth.py::test_login",
+      "outcome": "passed",
+      "setup": { "duration": 0.001, "outcome": "passed" },
+      "call": { "duration": 0.05, "outcome": "passed" },
+      "teardown": { "duration": 0.001, "outcome": "passed" }
+    },
+    {
+      "nodeid": "tests/test_auth.py::test_refresh_token",
+      "outcome": "failed",
+      "setup": { "duration": 0.001, "outcome": "passed" },
+      "call": {
+        "duration": 0.03,
+        "outcome": "failed",
+        "longrepr": "AssertionError: Token refresh returned None\n    assert refresh_token(expired_token) is not None"
+      },
+      "teardown": { "duration": 0.001, "outcome": "passed" }
+    },
+    {
+      "nodeid": "tests/test_auth.py::test_invalid_token",
+      "outcome": "failed",
+      "setup": { "duration": 0.001, "outcome": "passed" },
+      "call": {
+        "duration": 0.02,
+        "outcome": "failed",
+        "longrepr": "AttributeError: 'NoneType' object has no attribute 'verify'\n    token.verify()"
+      },
+      "teardown": { "duration": 0.001, "outcome": "passed" }
+    },
+    {
+      "nodeid": "tests/test_utils.py::test_format_date",
+      "outcome": "passed",
+      "setup": { "duration": 0.001, "outcome": "passed" },
+      "call": { "duration": 0.01, "outcome": "passed" },
+      "teardown": { "duration": 0.001, "outcome": "passed" }
+    },
+    {
+      "nodeid": "tests/test_utils.py::test_parse_config",
+      "outcome": "passed",
+      "setup": { "duration": 0.001, "outcome": "passed" },
+      "call": { "duration": 0.01, "outcome": "passed" },
+      "teardown": { "duration": 0.001, "outcome": "passed" }
+    }
+  ]
+}

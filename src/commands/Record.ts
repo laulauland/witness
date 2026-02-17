@@ -20,7 +20,7 @@ import { Effect } from "effect"
 import { tick } from "../Clock.js"
 import type { Fact } from "../Facts.js"
 import type { HookInput } from "../parsers/Parser.js"
-import { route } from "../parsers/index.js"
+import { routeWithInput } from "../parsers/index.js"
 import { DbLive } from "../Db.js"
 import { applySchema } from "../Schema.js"
 
@@ -92,6 +92,18 @@ const insertFileEvent = (
       VALUES (${sessionId}, ${t}, ${fact.event}, ${fact.file_path})`
 
 /**
+ * Insert a TestResult fact.
+ */
+const insertTestResult = (
+  sql: SqlClient.SqlClient,
+  sessionId: string,
+  t: number,
+  fact: Extract<Fact, { _tag: "TestResult" }>
+) =>
+  sql`INSERT INTO test_results (session_id, t, test_name, outcome, message)
+      VALUES (${sessionId}, ${t}, ${fact.test_name}, ${fact.outcome}, ${fact.message})`
+
+/**
  * Insert any structured fact. Dispatches by _tag.
  */
 const insertFact = (
@@ -103,6 +115,8 @@ const insertFact = (
   switch (fact._tag) {
     case "FileEvent":
       return insertFileEvent(sql, sessionId, t, fact)
+    case "TestResult":
+      return insertTestResult(sql, sessionId, t, fact)
     default:
       // Other fact types will be handled in later phases
       return Effect.void
@@ -129,8 +143,8 @@ export const recordPipeline = (
     const t = yield* tick(sessionId)
     yield* insertToolCall(sql, sessionId, t, input)
 
-    // Route to parser for structured facts
-    const parser = route(input.tool_name)
+    // Route to parser for structured facts (use extended router with full input)
+    const parser = routeWithInput(input)
     if (!parser) return
 
     const facts = parser(input)

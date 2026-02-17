@@ -1,0 +1,64 @@
+{
+  "numFailedTestSuites": 1,
+  "numFailedTests": 2,
+  "numPassedTestSuites": 1,
+  "numPassedTests": 3,
+  "numPendingTestSuites": 0,
+  "numPendingTests": 1,
+  "numRuntimeErrorTestSuites": 0,
+  "numTotalTestSuites": 2,
+  "numTotalTests": 6,
+  "success": false,
+  "testResults": [
+    {
+      "name": "/project/src/__tests__/auth.test.ts",
+      "status": "failed",
+      "assertionResults": [
+        {
+          "ancestorTitles": ["Auth"],
+          "fullName": "Auth should validate token",
+          "status": "passed",
+          "title": "should validate token"
+        },
+        {
+          "ancestorTitles": ["Auth"],
+          "fullName": "Auth should refresh expired token",
+          "status": "failed",
+          "title": "should refresh expired token",
+          "failureMessages": ["Error: Token refresh failed\n    at Object.<anonymous> (/project/src/__tests__/auth.test.ts:25:11)"]
+        },
+        {
+          "ancestorTitles": ["Auth"],
+          "fullName": "Auth should handle invalid token",
+          "status": "failed",
+          "title": "should handle invalid token",
+          "failureMessages": ["TypeError: Cannot read property 'verify' of undefined\n    at Object.<anonymous> (/project/src/__tests__/auth.test.ts:33:18)"]
+        }
+      ]
+    },
+    {
+      "name": "/project/src/__tests__/utils.test.ts",
+      "status": "passed",
+      "assertionResults": [
+        {
+          "ancestorTitles": ["Utils"],
+          "fullName": "Utils formatDate should format dates",
+          "status": "passed",
+          "title": "should format dates"
+        },
+        {
+          "ancestorTitles": ["Utils"],
+          "fullName": "Utils parseConfig should parse config",
+          "status": "passed",
+          "title": "should parse config"
+        },
+        {
+          "ancestorTitles": ["Utils"],
+          "fullName": "Utils pending feature should support new format",
+          "status": "pending",
+          "title": "should support new format"
+        }
+      ]
+    }
+  ]
+}

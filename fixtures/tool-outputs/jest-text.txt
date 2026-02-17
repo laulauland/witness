@@ -1,0 +1,36 @@
+ PASS  src/__tests__/utils.test.ts
+  Utils
+    ✓ formatDate should format dates (3 ms)
+    ✓ parseConfig should parse config (1 ms)
+    ○ skipped pending feature should support new format
+
+ FAIL  src/__tests__/auth.test.ts
+  Auth
+    ✓ should validate token (2 ms)
+    ✗ should refresh expired token (5 ms)
+    ✗ should handle invalid token (3 ms)
+
+  ● Auth › should refresh expired token
+
+    Error: Token refresh failed
+
+      23 |   it('should refresh expired token', () => {
+      24 |     const token = createToken({ exp: Date.now() - 1000 });
+    > 25 |     expect(refreshToken(token)).resolves.toBeDefined();
+         |           ^
+      26 |   });
+
+  ● Auth › should handle invalid token
+
+    TypeError: Cannot read property 'verify' of undefined
+
+      31 |   it('should handle invalid token', () => {
+      32 |     const token = 'invalid-token';
+    > 33 |     expect(verifyToken(token)).toThrow();
+         |                  ^
+      34 |   });
+
+Test Suites: 1 failed, 1 passed, 2 total
+Tests:       2 failed, 1 skipped, 3 passed, 6 total
+Snapshots:   0 total
+Time:        1.234 s

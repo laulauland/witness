@@ -1,0 +1,14 @@
+ PASS  src/__tests__/utils.test.ts
+  Utils
+    ✓ formatDate should format dates (3 ms)
+    ✓ parseConfig should parse config (1 ms)
+
+ PASS  src/__tests__/auth.test.ts
+  Auth
+    ✓ should validate token (2 ms)
+    ✓ should refresh expired token (1 ms)
+
+Test Suites: 2 passed, 2 total
+Tests:       4 passed, 4 total
+Snapshots:   0 total
+Time:        0.834 s

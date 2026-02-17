@@ -1,0 +1,14 @@
+ ✓ src/utils.test.ts (2)
+   ✓ formatDate should format dates
+   ✓ parseConfig should parse config
+ ✗ src/auth.test.ts (3)
+   ✓ should validate token
+   ✗ should refresh expired token
+     → Error: Token refresh failed
+   ✗ should handle invalid token
+     → TypeError: Cannot read property 'verify' of undefined
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 3 passed (5)
+   Start at  10:30:45
+   Duration  1.23s
