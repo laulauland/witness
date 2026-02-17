@@ -7,6 +7,7 @@
  *   - Regressions: which edits broke which tests
  *   - Thrashing: files stuck in edit-fail loops
  *   - Untested: files edited but not tested
+ *   - Blast Radius: files affected by edited files via import graph
  *   - Session stats: total edits, clock position
  *
  * Output goes to stdout as readable markdown.
@@ -47,6 +48,12 @@ interface ThrashingFile {
 interface UntestedEdit {
   file_path: string
   last_edit_t: number
+}
+
+interface BlastRadiusEntry {
+  edited_file: string
+  affected_file: string
+  depth: number
 }
 
 interface TestStateCounts {
@@ -109,6 +116,14 @@ export const generateBriefing = (
       ORDER BY last_edit_t DESC
     `
 
+    // Blast radius (reverse dependencies of edited files)
+    const blastRadius = yield* sql<BlastRadiusEntry>`
+      SELECT edited_file, affected_file, depth
+      FROM blast_radius
+      WHERE session_id = ${sessionId}
+      ORDER BY edited_file ASC, depth ASC, affected_file ASC
+    `
+
     // Session stats
     const editCountRows = yield* sql<{ cnt: number }>`
       SELECT COUNT(*) AS cnt FROM file_events
@@ -130,6 +145,7 @@ export const generateBriefing = (
       regressions: [...regressions],
       thrashing: [...thrashing],
       untested: [...untested],
+      blastRadius: [...blastRadius],
       stats: { totalEdits, totalToolCalls, clockPosition: clockPos },
     })
   })
@@ -143,6 +159,7 @@ interface BriefingData {
   regressions: Regression[]
   thrashing: ThrashingFile[]
   untested: UntestedEdit[]
+  blastRadius: BlastRadiusEntry[]
   stats: SessionStats
 }
 
@@ -198,6 +215,18 @@ export const formatBriefing = (data: BriefingData): string => {
     lines.push("")
     for (const u of data.untested) {
       lines.push(`- \`${u.file_path}\``)
+    }
+    lines.push("")
+  }
+
+  // Blast radius section
+  if (data.blastRadius.length > 0) {
+    lines.push("### Blast Radius")
+    lines.push("")
+    for (const b of data.blastRadius) {
+      lines.push(
+        `- Editing \`${b.edited_file}\` affects \`${b.affected_file}\` (depth ${b.depth})`
+      )
     }
     lines.push("")
   }

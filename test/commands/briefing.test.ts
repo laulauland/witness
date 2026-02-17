@@ -32,6 +32,7 @@ describe("Briefing", () => {
       expect(output).not.toContain("### Regressions")
       expect(output).not.toContain("### Thrashing")
       expect(output).not.toContain("### Untested")
+      expect(output).not.toContain("### Blast Radius")
     })
   })
 
@@ -197,6 +198,10 @@ describe("Briefing", () => {
           yield* sql`INSERT INTO file_events (session_id, t, event, file_path)
                      VALUES (${SESSION}, 9, 'edit', 'src/unrelated.ts')`
 
+          // Import graph edge so blast radius is non-empty
+          yield* sql`INSERT INTO imports (session_id, t, source_file, imported_module)
+                     VALUES (${SESSION}, 9, 'src/app.ts', 'src/auth.ts')`
+
           // Tool calls for stats
           yield* sql`INSERT INTO tool_calls (session_id, t, tool_name, tool_input, tool_output)
                      VALUES (${SESSION}, 1, 'Edit', '{}', NULL)`
@@ -212,6 +217,9 @@ describe("Briefing", () => {
       expect(output).toContain("### Regressions")
       expect(output).toContain("### Thrashing")
       expect(output).toContain("### Untested Edits")
+      expect(output).toContain("### Blast Radius")
+      expect(output).toContain("`src/auth.ts`")
+      expect(output).toContain("`src/app.ts`")
       expect(output).toContain("### Session Stats")
     })
   })
@@ -247,6 +255,7 @@ describe("Briefing", () => {
         regressions: [],
         thrashing: [],
         untested: [],
+        blastRadius: [],
         stats: { totalEdits: 0, totalToolCalls: 0, clockPosition: 5 },
       })
 
@@ -256,6 +265,7 @@ describe("Briefing", () => {
       expect(output).not.toContain("### Regressions")
       expect(output).not.toContain("### Thrashing")
       expect(output).not.toContain("### Untested")
+      expect(output).not.toContain("### Blast Radius")
     })
 
     it("includes failing test details with messages", () => {
@@ -269,6 +279,7 @@ describe("Briefing", () => {
         regressions: [],
         thrashing: [],
         untested: [],
+        blastRadius: [],
         stats: { totalEdits: 2, totalToolCalls: 5, clockPosition: 10 },
       })
 
