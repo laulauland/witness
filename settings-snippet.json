@@ -1,0 +1,22 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "type": "command",
+        "command": "witness lint"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "type": "command",
+        "command": "witness record"
+      }
+    ],
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "witness init"
+      }
+    ]
+  }
+}

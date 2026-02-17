@@ -7,13 +7,16 @@
  *   2. Default: .witness/witness.db
  */
 import { SqliteClient } from "@effect/sql-sqlite-bun"
-import { Config, Layer } from "effect"
+import { Config } from "effect"
+import { mkdirSync } from "node:fs"
+import { dirname, resolve } from "node:path"
 
 /** Default DB path relative to project root */
 export const DEFAULT_DB_PATH = ".witness/witness.db"
 
 /**
  * SqliteClient layer configured from WITNESS_DB env var or default path.
+ * Ensures parent directory exists before opening.
  * Provides both SqliteClient and the generic SqlClient tags.
  */
 export const DbLive = SqliteClient.layerConfig(
@@ -21,10 +24,18 @@ export const DbLive = SqliteClient.layerConfig(
     Config.string("WITNESS_DB").pipe(
       Config.withDefault(DEFAULT_DB_PATH)
     ),
-    (filename): SqliteClient.SqliteClientConfig => ({
-      filename,
-      disableWAL: false,
-    })
+    (filename): SqliteClient.SqliteClientConfig => {
+      const resolved = resolve(filename)
+      try {
+        mkdirSync(dirname(resolved), { recursive: true })
+      } catch {
+        // best-effort
+      }
+      return {
+        filename: resolved,
+        disableWAL: false,
+      }
+    }
   )
 )
 
