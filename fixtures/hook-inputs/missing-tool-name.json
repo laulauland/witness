@@ -1,0 +1,6 @@
+{
+  "hook": "PostToolUse",
+  "tool_input": {
+    "path": "src/foo.ts"
+  }
+}

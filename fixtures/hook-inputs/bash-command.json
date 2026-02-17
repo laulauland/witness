@@ -1,0 +1,9 @@
+{
+  "hook": "PostToolUse",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "ls -la src/"
+  },
+  "tool_output": "total 32\ndrwxr-xr-x  5 user  staff  160 Jan  1 00:00 .\n-rw-r--r--  1 user  staff  256 Jan  1 00:00 main.ts\n",
+  "tool_exit_code": 0
+}

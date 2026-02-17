@@ -1,0 +1,9 @@
+{
+  "hook": "PostToolUse",
+  "tool_name": "Read",
+  "tool_input": {
+    "path": "src/auth.ts"
+  },
+  "tool_output": "import { verify } from 'jsonwebtoken'\n\nexport const validateToken = (token: string) => {\n  return verify(token, SECRET)\n}\n",
+  "tool_exit_code": 0
+}

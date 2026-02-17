@@ -1,0 +1,11 @@
+{
+  "hook": "PostToolUse",
+  "tool_name": "str_replace_editor",
+  "tool_input": {
+    "path": "src/utils.ts",
+    "old_str": "function add(a, b) {",
+    "new_str": "function add(a: number, b: number): number {"
+  },
+  "tool_output": "The file was edited successfully.",
+  "tool_exit_code": 0
+}

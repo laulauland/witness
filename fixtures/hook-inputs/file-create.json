@@ -1,0 +1,10 @@
+{
+  "hook": "PostToolUse",
+  "tool_name": "file_create",
+  "tool_input": {
+    "path": "src/new-module.ts",
+    "content": "export const hello = () => 'world'\n"
+  },
+  "tool_output": "File created",
+  "tool_exit_code": 0
+}

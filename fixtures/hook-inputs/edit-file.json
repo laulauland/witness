@@ -1,0 +1,11 @@
+{
+  "hook": "PostToolUse",
+  "tool_name": "Edit",
+  "tool_input": {
+    "path": "src/auth.ts",
+    "old_text": "const token = null",
+    "new_text": "const token = getToken()"
+  },
+  "tool_output": "File edited successfully",
+  "tool_exit_code": 0
+}

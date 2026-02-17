@@ -1,0 +1,9 @@
+{
+  "hook": "PostToolUse",
+  "tool_name": "view",
+  "tool_input": {
+    "path": "src/main.ts"
+  },
+  "tool_output": "import { Effect } from 'effect'\n\nconsole.log('hello')\n",
+  "tool_exit_code": 0
+}
