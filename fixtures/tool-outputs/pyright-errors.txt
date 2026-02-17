@@ -1,0 +1,4 @@
+src/auth.py:10:5 - error: Expression of type "str" cannot be assigned to declared type "int" (reportGeneralTypeIssues)
+src/auth.py:25:12 - error: Cannot access member "foo" for type "User" (reportAttributeAccessIssue)
+src/utils.py:3:1 - error: Import "missing_module" could not be resolved (reportMissingImports)
+3 errors, 0 warnings, 0 informations

@@ -1,0 +1,50 @@
+[
+  {
+    "code": "E302",
+    "message": "Expected 2 blank lines, got 1",
+    "filename": "src/auth.py",
+    "location": {
+      "row": 10,
+      "column": 1
+    },
+    "end_location": {
+      "row": 10,
+      "column": 1
+    },
+    "fix": null,
+    "noqa_row": 10
+  },
+  {
+    "code": "F401",
+    "message": "'os' imported but unused",
+    "filename": "src/utils.py",
+    "location": {
+      "row": 3,
+      "column": 1
+    },
+    "end_location": {
+      "row": 3,
+      "column": 10
+    },
+    "fix": {
+      "applicability": "safe",
+      "message": "Remove unused import: `os`"
+    },
+    "noqa_row": 3
+  },
+  {
+    "code": "W291",
+    "message": "Trailing whitespace",
+    "filename": "src/auth.py",
+    "location": {
+      "row": 22,
+      "column": 5
+    },
+    "end_location": {
+      "row": 22,
+      "column": 8
+    },
+    "fix": null,
+    "noqa_row": 22
+  }
+]

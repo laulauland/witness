@@ -104,6 +104,30 @@ const insertTestResult = (
       VALUES (${sessionId}, ${t}, ${fact.test_name}, ${fact.outcome}, ${fact.message})`
 
 /**
+ * Insert a LintResult fact.
+ */
+const insertLintResult = (
+  sql: SqlClient.SqlClient,
+  sessionId: string,
+  t: number,
+  fact: Extract<Fact, { _tag: "LintResult" }>
+) =>
+  sql`INSERT INTO lint_results (session_id, t, file_path, line, rule, severity)
+      VALUES (${sessionId}, ${t}, ${fact.file_path}, ${fact.line}, ${fact.rule}, ${fact.severity})`
+
+/**
+ * Insert a TypeError fact.
+ */
+const insertTypeError = (
+  sql: SqlClient.SqlClient,
+  sessionId: string,
+  t: number,
+  fact: Extract<Fact, { _tag: "TypeError" }>
+) =>
+  sql`INSERT INTO type_errors (session_id, t, file_path, line, message)
+      VALUES (${sessionId}, ${t}, ${fact.file_path}, ${fact.line}, ${fact.message})`
+
+/**
  * Insert an Import fact.
  */
 const insertImport = (
@@ -129,10 +153,13 @@ const insertFact = (
       return insertFileEvent(sql, sessionId, t, fact)
     case "TestResult":
       return insertTestResult(sql, sessionId, t, fact)
+    case "LintResult":
+      return insertLintResult(sql, sessionId, t, fact)
+    case "TypeError":
+      return insertTypeError(sql, sessionId, t, fact)
     case "Import":
       return insertImport(sql, sessionId, t, fact)
     default:
-      // Other fact types will be handled in later phases
       return Effect.void
   }
 }

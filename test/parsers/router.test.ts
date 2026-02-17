@@ -6,6 +6,12 @@ import { route, routeWithInput } from "../../src/parsers/index.js"
 import { parseFileEvent } from "../../src/parsers/file.js"
 import { parseJestOutput } from "../../src/parsers/jest.js"
 import { parsePytestOutput } from "../../src/parsers/pytest.js"
+import { parseEslintOutput } from "../../src/parsers/eslint.js"
+import { parseFlake8Output } from "../../src/parsers/flake8.js"
+import { parseTscOutput } from "../../src/parsers/tsc.js"
+import { parseMypyOutput } from "../../src/parsers/mypy.js"
+import { parseGoOutput } from "../../src/parsers/go.js"
+import { parseCargoOutput } from "../../src/parsers/cargo.js"
 
 describe("Parser router", () => {
   // ── File tools route to file parser ─────────────────────────
@@ -186,5 +192,131 @@ describe("Parser router (routeWithInput)", () => {
     expect(
       routeWithInput({ tool_name: "Bash", tool_input: { cmd: "bun test" } })
     ).toBe(parseJestOutput)
+  })
+
+  // ── Go test commands ──────────────────────────────────────
+
+  it("routes 'go test' to go parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "go test ./..." } })
+    ).toBe(parseGoOutput)
+  })
+
+  it("routes 'go test -v' to go parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "go test -v ./pkg/..." } })
+    ).toBe(parseGoOutput)
+  })
+
+  it("routes 'go test -run TestFoo' to go parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "go test -run TestFoo" } })
+    ).toBe(parseGoOutput)
+  })
+
+  // ── Cargo test commands ───────────────────────────────────
+
+  it("routes 'cargo test' to cargo parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "cargo test" } })
+    ).toBe(parseCargoOutput)
+  })
+
+  it("routes 'cargo test --lib' to cargo parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "cargo test --lib" } })
+    ).toBe(parseCargoOutput)
+  })
+
+  it("routes 'cargo test specific_test' to cargo parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "cargo test math::tests::test_add" } })
+    ).toBe(parseCargoOutput)
+  })
+
+  // ── ESLint commands ───────────────────────────────────────
+
+  it("routes 'eslint' to eslint parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "eslint src/" } })
+    ).toBe(parseEslintOutput)
+  })
+
+  it("routes 'npx eslint' to eslint parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "npx eslint --fix src/" } })
+    ).toBe(parseEslintOutput)
+  })
+
+  it("routes 'yarn eslint' to eslint parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "yarn eslint ." } })
+    ).toBe(parseEslintOutput)
+  })
+
+  // ── Flake8/Ruff commands ──────────────────────────────────
+
+  it("routes 'flake8' to flake8 parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "flake8 src/" } })
+    ).toBe(parseFlake8Output)
+  })
+
+  it("routes 'ruff check' to flake8 parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "ruff check ." } })
+    ).toBe(parseFlake8Output)
+  })
+
+  it("routes plain 'ruff' to flake8 parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "ruff src/" } })
+    ).toBe(parseFlake8Output)
+  })
+
+  it("routes 'python -m flake8' to flake8 parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "python -m flake8 src/" } })
+    ).toBe(parseFlake8Output)
+  })
+
+  // ── tsc commands ──────────────────────────────────────────
+
+  it("routes 'tsc' to tsc parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "tsc --noEmit" } })
+    ).toBe(parseTscOutput)
+  })
+
+  it("routes 'npx tsc' to tsc parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "npx tsc --noEmit" } })
+    ).toBe(parseTscOutput)
+  })
+
+  it("routes 'bunx tsc' to tsc parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "bunx tsc --noEmit" } })
+    ).toBe(parseTscOutput)
+  })
+
+  // ── mypy/pyright commands ─────────────────────────────────
+
+  it("routes 'mypy' to mypy parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "mypy src/" } })
+    ).toBe(parseMypyOutput)
+  })
+
+  it("routes 'pyright' to mypy parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "pyright" } })
+    ).toBe(parseMypyOutput)
+  })
+
+  it("routes 'python -m mypy' to mypy parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "python -m mypy src/" } })
+    ).toBe(parseMypyOutput)
   })
 })

@@ -1,0 +1,26 @@
+=== RUN   TestAdd
+--- PASS: TestAdd (0.00s)
+=== RUN   TestSubtract
+--- PASS: TestSubtract (0.00s)
+=== RUN   TestDivide
+--- PASS: TestDivide (0.01s)
+=== RUN   TestParseConfig
+--- PASS: TestParseConfig (0.00s)
+=== RUN   TestParseConfig/valid_json
+--- PASS: TestParseConfig/valid_json (0.00s)
+=== RUN   TestParseConfig/invalid_json
+--- FAIL: TestParseConfig/invalid_json (0.00s)
+    config_test.go:58: expected error for invalid JSON, got nil
+=== RUN   TestParseConfig/empty_input
+--- PASS: TestParseConfig/empty_input (0.00s)
+=== RUN   TestHandleRequest
+--- FAIL: TestHandleRequest (0.02s)
+    handler_test.go:23: 
+        Expected status 200, got 500
+        Response body: {"error":"internal server error"}
+=== RUN   TestHandleRequest/with_auth
+--- FAIL: TestHandleRequest/with_auth (0.01s)
+    handler_test.go:45: authentication header not forwarded
+FAIL
+exit status 1
+FAIL	github.com/example/server	0.042s

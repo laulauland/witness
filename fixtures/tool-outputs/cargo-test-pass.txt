@@ -1,0 +1,27 @@
+   Compiling mylib v0.1.0 (/project)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.34s
+     Running unittests src/lib.rs (target/debug/deps/mylib-abc123)
+
+running 5 tests
+test math::tests::test_add ... ok
+test math::tests::test_subtract ... ok
+test math::tests::test_multiply ... ok
+test config::tests::test_parse_valid ... ok
+test config::tests::test_parse_empty ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/integration_test.rs (target/debug/deps/integration_test-def456)
+
+running 2 tests
+test test_full_pipeline ... ok
+test test_error_handling ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+   Doc-tests mylib
+
+running 1 test
+test src/lib.rs - add (line 5) ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s

@@ -1,0 +1,18 @@
+=== RUN   TestAdd
+--- PASS: TestAdd (0.00s)
+=== RUN   TestSubtract
+--- PASS: TestSubtract (0.00s)
+=== RUN   TestMultiply
+--- PASS: TestMultiply (0.01s)
+=== RUN   TestDivide
+    --- SKIP: TestDivide (0.00s)
+        math_test.go:42: skipping division tests in short mode
+=== RUN   TestParseConfig
+--- PASS: TestParseConfig (0.02s)
+=== RUN   TestParseConfig/valid_json
+--- PASS: TestParseConfig/valid_json (0.00s)
+=== RUN   TestParseConfig/empty_input
+--- PASS: TestParseConfig/empty_input (0.00s)
+PASS
+ok  	github.com/example/mathlib	0.035s
+ok  	github.com/example/config	0.021s

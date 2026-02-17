@@ -1,0 +1,32 @@
+   Compiling mylib v0.1.0 (/project)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.87s
+     Running unittests src/lib.rs (target/debug/deps/mylib-abc123)
+
+running 6 tests
+test math::tests::test_add ... ok
+test math::tests::test_subtract ... ok
+test math::tests::test_multiply ... FAILED
+test config::tests::test_parse_valid ... ok
+test config::tests::test_parse_empty ... FAILED
+test config::tests::test_parse_nested ... ok
+
+failures:
+
+---- math::tests::test_multiply stdout ----
+thread 'math::tests::test_multiply' panicked at src/math.rs:45:5:
+assertion `left == right` failed
+  left: 6
+ right: 8
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- config::tests::test_parse_empty stdout ----
+thread 'config::tests::test_parse_empty' panicked at src/config.rs:78:5:
+called `Result::unwrap()` on an `Err` value: ParseError("unexpected end of input")
+
+failures:
+    config::tests::test_parse_empty
+    math::tests::test_multiply
+
+test result: FAILED. 4 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+error: test failed, to rerun pass `--lib`

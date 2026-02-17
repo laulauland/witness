@@ -1,0 +1,63 @@
+[
+  {
+    "filePath": "/home/user/project/src/auth.ts",
+    "messages": [
+      {
+        "ruleId": "no-console",
+        "severity": 1,
+        "message": "Unexpected console statement.",
+        "line": 10,
+        "column": 5,
+        "nodeType": "MemberExpression"
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 2,
+        "message": "'foo' is defined but never used.",
+        "line": 15,
+        "column": 7,
+        "nodeType": "Identifier"
+      },
+      {
+        "ruleId": "semi",
+        "severity": 2,
+        "message": "Missing semicolon.",
+        "line": 22,
+        "column": 1,
+        "nodeType": "ExpressionStatement"
+      }
+    ],
+    "errorCount": 2,
+    "warningCount": 1,
+    "fixableErrorCount": 1,
+    "fixableWarningCount": 0,
+    "source": "..."
+  },
+  {
+    "filePath": "/home/user/project/src/utils.ts",
+    "messages": [
+      {
+        "ruleId": "no-var",
+        "severity": 2,
+        "message": "Unexpected var, use let or const instead.",
+        "line": 5,
+        "column": 1,
+        "nodeType": "VariableDeclaration"
+      }
+    ],
+    "errorCount": 1,
+    "warningCount": 0,
+    "fixableErrorCount": 1,
+    "fixableWarningCount": 0,
+    "source": "..."
+  },
+  {
+    "filePath": "/home/user/project/src/clean.ts",
+    "messages": [],
+    "errorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "source": "..."
+  }
+]
