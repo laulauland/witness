@@ -1,0 +1,72 @@
+{
+  "numTotalTestSuites": 3,
+  "numPassedTestSuites": 2,
+  "numFailedTestSuites": 1,
+  "numTotalTests": 8,
+  "numPassedTests": 5,
+  "numFailedTests": 2,
+  "numSkippedTests": 1,
+  "success": false,
+  "testResults": [
+    {
+      "name": "/home/user/project/src/utils.test.ts",
+      "status": "passed",
+      "assertionResults": [
+        {
+          "fullName": "formatDate should format ISO dates",
+          "status": "passed",
+          "duration": 2
+        },
+        {
+          "fullName": "formatDate should handle invalid input",
+          "status": "passed",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "name": "/home/user/project/src/auth.test.ts",
+      "status": "failed",
+      "assertionResults": [
+        {
+          "fullName": "Auth should validate token",
+          "status": "passed",
+          "duration": 5
+        },
+        {
+          "fullName": "Auth should refresh expired token",
+          "status": "failed",
+          "duration": 12,
+          "failureMessages": ["AssertionError: expected 200, got 401\n    at Object.<anonymous> (src/auth.test.ts:25:10)"]
+        },
+        {
+          "fullName": "Auth should handle token revocation",
+          "status": "failed",
+          "duration": 3,
+          "failureMessages": ["TypeError: Cannot read properties of undefined (reading 'revoke')\n    at src/auth.test.ts:40:15"]
+        },
+        {
+          "fullName": "Auth should support new format",
+          "status": "skipped",
+          "duration": 0
+        }
+      ]
+    },
+    {
+      "name": "/home/user/project/src/db.test.ts",
+      "status": "passed",
+      "assertionResults": [
+        {
+          "fullName": "Database should connect",
+          "status": "passed",
+          "duration": 15
+        },
+        {
+          "fullName": "Database should query",
+          "status": "passed",
+          "duration": 8
+        }
+      ]
+    }
+  ]
+}

@@ -12,6 +12,9 @@ import { parseTscOutput } from "../../src/parsers/tsc.js"
 import { parseMypyOutput } from "../../src/parsers/mypy.js"
 import { parseGoOutput } from "../../src/parsers/go.js"
 import { parseCargoOutput } from "../../src/parsers/cargo.js"
+import { parseVitestOutput } from "../../src/parsers/vitest.js"
+import { parseBunTestOutput } from "../../src/parsers/buntest.js"
+import { parseBiomeOutput } from "../../src/parsers/biome.js"
 
 describe("Parser router", () => {
   // ── File tools route to file parser ─────────────────────────
@@ -98,16 +101,16 @@ describe("Parser router (routeWithInput)", () => {
     ).toBe(parseJestOutput)
   })
 
-  it("routes 'vitest' to jest parser", () => {
+  it("routes 'vitest' to vitest parser", () => {
     expect(
       routeWithInput({ tool_name: "Bash", tool_input: { command: "vitest run" } })
-    ).toBe(parseJestOutput)
+    ).toBe(parseVitestOutput)
   })
 
-  it("routes 'bun test' to jest parser", () => {
+  it("routes 'bun test' to bun test parser", () => {
     expect(
       routeWithInput({ tool_name: "Bash", tool_input: { command: "bun test" } })
-    ).toBe(parseJestOutput)
+    ).toBe(parseBunTestOutput)
   })
 
   it("routes 'npm test' to jest parser", () => {
@@ -191,7 +194,7 @@ describe("Parser router (routeWithInput)", () => {
   it("handles 'cmd' field instead of 'command'", () => {
     expect(
       routeWithInput({ tool_name: "Bash", tool_input: { cmd: "bun test" } })
-    ).toBe(parseJestOutput)
+    ).toBe(parseBunTestOutput)
   })
 
   // ── Go test commands ──────────────────────────────────────
@@ -318,5 +321,77 @@ describe("Parser router (routeWithInput)", () => {
     expect(
       routeWithInput({ tool_name: "Bash", tool_input: { command: "python -m mypy src/" } })
     ).toBe(parseMypyOutput)
+  })
+
+  // ── Vitest commands (dedicated parser) ────────────────────
+
+  it("routes 'vitest' to vitest parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "vitest" } })
+    ).toBe(parseVitestOutput)
+  })
+
+  it("routes 'npx vitest' to vitest parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "npx vitest run" } })
+    ).toBe(parseVitestOutput)
+  })
+
+  it("routes 'bunx vitest' to vitest parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "bunx vitest --reporter=json" } })
+    ).toBe(parseVitestOutput)
+  })
+
+  // ── Bun test commands (dedicated parser) ──────────────────
+
+  it("routes 'bun test' to bun test parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "bun test" } })
+    ).toBe(parseBunTestOutput)
+  })
+
+  it("routes 'bun test src/' to bun test parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "bun test src/" } })
+    ).toBe(parseBunTestOutput)
+  })
+
+  it("routes 'bun test --timeout 5000' to bun test parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "bun test --timeout 5000" } })
+    ).toBe(parseBunTestOutput)
+  })
+
+  // ── Biome commands ────────────────────────────────────────
+
+  it("routes 'biome check' to biome parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "biome check src/" } })
+    ).toBe(parseBiomeOutput)
+  })
+
+  it("routes 'biome lint' to biome parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "biome lint ." } })
+    ).toBe(parseBiomeOutput)
+  })
+
+  it("routes 'biome ci' to biome parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "biome ci" } })
+    ).toBe(parseBiomeOutput)
+  })
+
+  it("routes 'npx biome check' to biome parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "npx biome check ." } })
+    ).toBe(parseBiomeOutput)
+  })
+
+  it("routes 'bunx biome lint' to biome parser", () => {
+    expect(
+      routeWithInput({ tool_name: "Bash", tool_input: { command: "bunx biome lint src/" } })
+    ).toBe(parseBiomeOutput)
   })
 })

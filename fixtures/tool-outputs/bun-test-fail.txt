@@ -1,0 +1,31 @@
+bun test v1.3.9 (cf6cdbbb)
+
+test/auth.test.ts:
+(pass) Auth > should validate token [2.15ms]
+(pass) Auth > should hash password [0.89ms]
+(fail) Auth > should refresh expired token [5.23ms]
+      error: expect(received).toBe(expected)
+
+      Expected: 200
+      Received: 401
+
+      at /home/user/project/test/auth.test.ts:25:20
+(fail) Auth > should handle revocation [1.02ms]
+      error: TypeError: Cannot read properties of undefined (reading 'revoke')
+
+      at /home/user/project/test/auth.test.ts:40:15
+
+test/utils.test.ts:
+(pass) Utils > formatDate should format dates [0.45ms]
+(pass) Utils > parseConfig should parse config [0.32ms]
+(pass) Utils > slugify should slugify strings [0.12ms]
+
+test/db.test.ts:
+(pass) Database > should connect [12.34ms]
+(pass) Database > should query [3.21ms]
+(pass) Database > should handle transactions [5.67ms]
+
+ 9 pass
+ 2 fail
+ 22 expect() calls
+Ran 11 tests across 3 files. [156.00ms]

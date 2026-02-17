@@ -1,0 +1,65 @@
+src/auth.ts:10:3 lint/suspicious/noConsoleLog ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✖ Don't use console.log
+  
+    8 │ function login(user: string) {
+    9 │   const token = createToken(user);
+  > 10 │   console.log("token created", token);
+       │   ^^^^^^^^^^^
+   11 │   return token;
+   12 │ }
+  
+  ℹ console.log is usually used for debugging, remove it before shipping.
+
+src/auth.ts:22:7 lint/complexity/noForEach ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✖ Prefer for...of instead of forEach.
+  
+   20 │ function processTokens(tokens: string[]) {
+   21 │   const results: boolean[] = [];
+  > 22 │   tokens.forEach((token) => {
+       │          ^^^^^^^
+   23 │     results.push(validateToken(token));
+   24 │   });
+  
+  ℹ forEach may cause performance issues when using closures.
+
+src/utils.ts:5:5 lint/style/noVar ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✖ Use let or const instead of var.
+  
+   3 │ 
+   4 │ export function loadConfig() {
+  > 5 │   var config = {};
+       │   ^^^
+   6 │   return config;
+   7 │ }
+  
+  ℹ A variable declared with var is accessible in the whole module.
+
+src/utils.ts:15:1 lint/correctness/noUnusedVariables ━━━━━━━━━━━━━━━━━━━
+
+  ✖ This variable is unused.
+  
+   13 │ 
+   14 │ 
+  > 15 │ const LEGACY_ENDPOINT = "https://old-api.example.com";
+       │ ^^^^^
+   16 │ 
+
+  ℹ Unused variables usually are result of incomplete refactoring.
+
+src/routes.ts:8:20 lint/suspicious/noExplicitAny ━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✖ Unexpected any. Specify a different type.
+  
+    6 │ 
+    7 │ export function handleRequest(
+  > 8 │   req: Request, ctx: any
+       │                     ^^^
+    9 │ ) {
+   10 │   return new Response("ok");
+  
+  ℹ any disables many type checking rules.
+
+Checked 5 files in 42ms. Found 5 errors.

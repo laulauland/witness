@@ -1,0 +1,19 @@
+bun test v1.3.9 (cf6cdbbb)
+
+test/auth.test.ts:
+(pass) Auth > should validate token [2.15ms]
+(pass) Auth > should hash password [0.89ms]
+(pass) Auth > should refresh expired token [3.12ms]
+
+test/utils.test.ts:
+(pass) Utils > formatDate should format dates [0.45ms]
+(pass) Utils > parseConfig should parse config [0.32ms]
+
+test/db.test.ts:
+(pass) Database > should connect [12.34ms]
+(pass) Database > should query [3.21ms]
+
+ 7 pass
+ 0 fail
+ 15 expect() calls
+Ran 7 tests across 3 files. [98.00ms]

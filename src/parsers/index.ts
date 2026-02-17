@@ -15,6 +15,9 @@ import { parseTscOutput } from "./tsc.js"
 import { parseMypyOutput } from "./mypy.js"
 import { parseGoOutput } from "./go.js"
 import { parseCargoOutput } from "./cargo.js"
+import { parseVitestOutput } from "./vitest.js"
+import { parseBunTestOutput } from "./buntest.js"
+import { parseBiomeOutput } from "./biome.js"
 
 /**
  * Tool names that produce file events.
@@ -34,9 +37,19 @@ const FILE_TOOLS = new Set([
 ])
 
 /**
- * Patterns matching jest/vitest/mocha test commands.
+ * Patterns matching vitest commands specifically.
  */
-const JEST_PATTERN = /\b(jest|vitest|mocha|bun\s+test|bunx\s+vitest|npx\s+jest|npx\s+vitest|yarn\s+test|npm\s+test|pnpm\s+test)\b/i
+const VITEST_PATTERN = /\b(vitest|bunx\s+vitest|npx\s+vitest|pnpx\s+vitest)\b/i
+
+/**
+ * Patterns matching bun test commands specifically.
+ */
+const BUN_TEST_PATTERN = /\bbun\s+test\b/i
+
+/**
+ * Patterns matching jest/mocha test commands (and generic npm/yarn/pnpm test).
+ */
+const JEST_PATTERN = /\b(jest|mocha|npx\s+jest|yarn\s+test|npm\s+test|pnpm\s+test)\b/i
 
 /**
  * Patterns matching pytest commands.
@@ -62,6 +75,11 @@ const TSC_PATTERN = /\b(tsc|npx\s+tsc|bunx\s+tsc|yarn\s+tsc|pnpm\s+tsc)\b/i
  * Patterns matching mypy/pyright commands.
  */
 const MYPY_PATTERN = /\b(mypy|pyright|python\s+-m\s+mypy|python\s+-m\s+pyright)\b/i
+
+/**
+ * Patterns matching biome commands.
+ */
+const BIOME_PATTERN = /\b(biome\s+(?:check|lint|ci)|npx\s+biome|bunx\s+biome|pnpx\s+biome)\b/i
 
 /**
  * Patterns matching go test commands.
@@ -104,6 +122,14 @@ export const routeWithInput = (input: HookInput): Parser | undefined => {
         ? input.tool_input.cmd
         : ""
 
+    // Vitest and bun test must match before the generic jest pattern
+    // since JEST_PATTERN would also match some of their invocations
+    if (VITEST_PATTERN.test(command)) {
+      return parseVitestOutput
+    }
+    if (BUN_TEST_PATTERN.test(command)) {
+      return parseBunTestOutput
+    }
     if (JEST_PATTERN.test(command)) {
       return parseJestOutput
     }
@@ -118,6 +144,9 @@ export const routeWithInput = (input: HookInput): Parser | undefined => {
     }
     if (ESLINT_PATTERN.test(command)) {
       return parseEslintOutput
+    }
+    if (BIOME_PATTERN.test(command)) {
+      return parseBiomeOutput
     }
     if (FLAKE8_PATTERN.test(command)) {
       return parseFlake8Output

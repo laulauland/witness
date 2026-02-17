@@ -1,0 +1,13 @@
+ ✓ src/utils.test.ts (3 tests) 4ms
+     ✓ formatDate should format ISO dates
+     ✓ formatDate should handle invalid input
+     ✓ parseConfig should load defaults
+
+ ✓ src/db.test.ts (2 tests) 12ms
+     ✓ Database should connect
+     ✓ Database should query
+
+ Test Files  2 passed (2)
+      Tests  5 passed (5)
+   Start at  14:22:10
+   Duration  245ms

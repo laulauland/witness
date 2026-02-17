@@ -1,0 +1,71 @@
+{
+  "diagnostics": [
+    {
+      "category": "lint/suspicious/noConsoleLog",
+      "severity": "error",
+      "description": "Don't use console.log",
+      "message": [{ "content": "Don't use console.log" }],
+      "advices": {},
+      "location": {
+        "path": { "file": "src/auth.ts" },
+        "span": [145, 156],
+        "sourceCode": "  console.log(\"token created\", token);"
+      },
+      "tags": [],
+      "source": null
+    },
+    {
+      "category": "lint/complexity/noForEach",
+      "severity": "error",
+      "description": "Prefer for...of instead of forEach.",
+      "message": [{ "content": "Prefer for...of instead of forEach." }],
+      "advices": {},
+      "location": {
+        "path": { "file": "src/auth.ts" },
+        "span": [310, 317],
+        "sourceCode": "  tokens.forEach((token) => {"
+      },
+      "tags": []
+    },
+    {
+      "category": "lint/style/noVar",
+      "severity": "error",
+      "description": "Use let or const instead of var.",
+      "message": [{ "content": "Use let or const instead of var." }],
+      "advices": {},
+      "location": {
+        "path": { "file": "src/utils.ts" },
+        "span": [55, 58],
+        "sourceCode": "  var config = {};"
+      },
+      "tags": []
+    },
+    {
+      "category": "lint/correctness/noUnusedVariables",
+      "severity": "warning",
+      "description": "This variable is unused.",
+      "message": [{ "content": "This variable is unused." }],
+      "advices": {},
+      "location": {
+        "path": { "file": "src/utils.ts" },
+        "span": [180, 185],
+        "sourceCode": "const LEGACY_ENDPOINT = \"https://old-api.example.com\";"
+      },
+      "tags": []
+    },
+    {
+      "category": "lint/suspicious/noExplicitAny",
+      "severity": "error",
+      "description": "Unexpected any. Specify a different type.",
+      "message": [{ "content": "Unexpected any. Specify a different type." }],
+      "advices": {},
+      "location": {
+        "path": { "file": "src/routes.ts" },
+        "span": [112, 115],
+        "sourceCode": "  req: Request, ctx: any"
+      },
+      "tags": []
+    }
+  ],
+  "command": "lint"
+}

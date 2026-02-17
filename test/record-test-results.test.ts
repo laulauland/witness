@@ -12,7 +12,7 @@ describe("Record pipeline: test results", () => {
     const input = JSON.stringify({
       hook: "PostToolUse",
       tool_name: "Bash",
-      tool_input: { command: "bun test" },
+      tool_input: { command: "npx jest --json" },
       tool_output: JSON.stringify({
         numFailedTests: 1,
         numPassedTests: 2,
