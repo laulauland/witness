@@ -1,0 +1,26 @@
+{
+  "name": "witness",
+  "module": "src/main.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "bun run src/main.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@effect/cli": "^0.73.2",
+    "@effect/platform": "^0.94.5",
+    "@effect/platform-bun": "^0.87.1",
+    "@effect/schema": "^0.75.5",
+    "@effect/sql": "^0.49.0",
+    "@effect/sql-sqlite-bun": "^0.50.2",
+    "effect": "^3.19.17"
+  }
+}
