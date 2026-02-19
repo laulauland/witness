@@ -1,0 +1,21 @@
+{
+  "name": "laulauland-plugins",
+  "owner": {
+    "name": "laulauland"
+  },
+  "metadata": {
+    "description": "Claude Code plugins by laulauland"
+  },
+  "plugins": [
+    {
+      "name": "witness",
+      "source": ".",
+      "description": "Behavioral linter for AI coding agents — enforces read-before-edit, test-after-change, no-commit-failing, and other workflow rules",
+      "version": "0.1.0",
+      "author": {
+        "name": "laulauland"
+      },
+      "keywords": ["linter", "agent", "workflow", "hooks"]
+    }
+  ]
+}
