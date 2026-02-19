@@ -68,8 +68,8 @@ witness query <name>      # Named queries (failing, regressions, thrashing, etc.
 
 ```
 witness/
-├── AGENTS.md              # You are here
-├── CLAUDE.md              # → AGENTS.md (symlink)
+├── .claude-plugin/
+│   └── plugin.json        # Plugin manifest
 ├── docs/
 │   ├── architecture.md    # System design, data flow, components
 │   ├── principles.md      # Design principles
@@ -77,6 +77,11 @@ witness/
 │   ├── phases.md          # Implementation phases
 │   ├── decisions.md       # ADRs + open questions
 │   └── testing.md         # Testing strategy
+├── hooks/
+│   └── hooks.json         # Claude Code hook definitions
+├── skills/
+│   └── witness/
+│       └── SKILL.md       # Agent-facing usage guide
 ├── src/
 │   ├── main.ts            # CLI entrypoint
 │   ├── Db.ts              # SQLite layer

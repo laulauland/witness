@@ -1,0 +1,37 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run ${CLAUDE_PLUGIN_ROOT}/src/main.ts lint",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run ${CLAUDE_PLUGIN_ROOT}/src/main.ts record",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run ${CLAUDE_PLUGIN_ROOT}/src/main.ts init",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
