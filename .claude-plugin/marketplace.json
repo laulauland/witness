@@ -9,7 +9,10 @@
   "plugins": [
     {
       "name": "witness",
-      "source": ".",
+      "source": {
+        "source": "github",
+        "repo": "laulauland/witness"
+      },
       "description": "Behavioral linter for AI coding agents — enforces read-before-edit, test-after-change, no-commit-failing, and other workflow rules",
       "version": "0.1.0",
       "author": {
