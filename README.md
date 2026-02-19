@@ -1,8 +1,8 @@
 # Witness
 
-A real-time behavioral linter for AI coding agents. Witness hooks into tool calls to intercept bad workflow patterns — editing without reading, thrashing on a file, committing with failing tests, making changes without testing them.
+Witness observes every tool call an AI coding agent makes, records structured facts into SQLite, and derives useful state from them — which tests are failing, what files were edited, what broke after a change, what depends on what.
 
-**The linter is the product.** Witness observes every tool call, builds a fact store in SQLite, and evaluates deterministic lint rules against derived SQL views. No heuristics, no LLM-in-the-loop — just structured enforcement of good engineering practices.
+Out of the box it's a passive observer: it records facts and lets you query them. Optionally, you can enable lint rules that warn or block the agent when it falls into bad patterns (editing without reading, committing with failing tests, thrashing on a file).
 
 ## Prerequisites
 
@@ -23,8 +23,8 @@ claude --plugin-dir /path/to/witness
 After installing, run `bun install` inside the plugin directory if you haven't already.
 
 The plugin automatically wires up all three hooks:
-- **PreToolUse** → `witness lint` (checks rules before each tool call)
 - **PostToolUse** → `witness record` (records facts after each tool call)
+- **PreToolUse** → `witness lint` (evaluates rules, if any are enabled)
 - **SessionStart** → `witness init` (creates the DB if needed)
 
 ### Manual hook setup
@@ -70,56 +70,20 @@ If you prefer to configure hooks yourself, add this to your `.claude/settings.js
 
 ## How It Works
 
-Witness runs as two hooks on every AI agent tool call:
+Witness runs as two hooks on every tool call:
 
-1. **PreToolUse** (`witness lint`): Before a tool runs, evaluate lint rules. May warn or block.
-2. **PostToolUse** (`witness record`): After a tool runs, record facts into the DB.
+1. **PostToolUse** (`witness record`): After a tool runs, parse the output and insert structured facts into SQLite.
+2. **PreToolUse** (`witness lint`): Before a tool runs, evaluate any enabled lint rules against the DB state.
 
 Both hooks read JSON from stdin and exit 0 always. They never crash the agent, even on malformed input.
 
-```
-Agent tool call → PreToolUse (lint) → [allow / warn / block]
-                → tool executes
-                → PostToolUse (record) → facts inserted into SQLite
-```
+## Queries
 
-## Lint Rules
-
-| Rule | Default | Fires when |
-|------|---------|------------|
-| `no_edit_unread` | warn | Editing a file you haven't read this session |
-| `test_after_edits` | warn | 3+ edits without running tests |
-| `fix_regressions_first` | warn | Editing new files while regressions exist |
-| `no_pointless_rerun` | warn | Re-running tests with no edits since last run |
-| `no_thrashing` | block | 3+ edits to the same file with failures persisting |
-| `no_commit_failing` | block | Committing while tests are failing |
-| `scope_check` | off | Editing files outside the blast radius of current work |
-
-## Configuration
-
-Create `.witness.json` in your project root to override defaults:
-
-```json
-{
-  "rules": {
-    "no_edit_unread": "warn",
-    "fix_regressions_first": "warn",
-    "test_after_edits": ["warn", { "threshold": 3 }],
-    "no_thrashing": ["block", { "threshold": 3 }],
-    "no_commit_failing": "block",
-    "no_pointless_rerun": "warn",
-    "scope_check": "off"
-  }
-}
-```
-
-Each rule can be `"warn"`, `"block"`, `"off"`, or `["action", { options }]`.
-
-## Commands
+The primary interface. Witness records facts passively — you query them when you need situational awareness.
 
 ### `witness briefing`
 
-Print a markdown situational summary: failing tests, regressions, thrashing files, untested edits, blast radius, session stats. Empty sections are omitted.
+Markdown summary of the current session: failing tests, regressions, thrashing files, untested edits, blast radius, session stats. Empty sections are omitted.
 
 ### `witness query <name> [arg]`
 
@@ -139,6 +103,31 @@ Print a markdown situational summary: failing tests, regressions, thrashing file
 | `stats` | Session summary | — |
 | `blast` | Reverse dependencies | `<file>` |
 | `deps` | Forward dependencies | `<file>` |
+
+## Lint Rules
+
+All rules are **off by default**. Enable them in `.witness.json` in your project root:
+
+```json
+{
+  "rules": {
+    "no_edit_unread": "warn",
+    "no_commit_failing": "block"
+  }
+}
+```
+
+Each rule can be `"warn"`, `"block"`, `"off"`, or `["action", { options }]`.
+
+| Rule | Fires when |
+|------|------------|
+| `no_edit_unread` | Editing a file you haven't read this session |
+| `test_after_edits` | N+ edits without running tests (default threshold: 3) |
+| `fix_regressions_first` | Editing new files while regressions exist |
+| `no_pointless_rerun` | Re-running tests with no edits since last run |
+| `no_thrashing` | N+ edits to the same file with failures persisting (default threshold: 3) |
+| `no_commit_failing` | Committing while tests are failing |
+| `scope_check` | Editing files outside the blast radius of current work |
 
 ## Parsers
 
@@ -174,14 +163,6 @@ bun install
 bun test
 bunx tsc --noEmit
 ```
-
-## Design Principles
-
-1. **Never crash the host** — Hooks exit 0 always, even on garbage input
-2. **Deterministic over clever** — Rules are SQL queries, not heuristics
-3. **Latency is correctness** — <30ms lint, <50ms record
-4. **Warn before block** — Most rules warn; block is reserved for destructive patterns
-5. **Passive observation** — Facts build from observing tool calls, no extra commands needed
 
 ## License
 

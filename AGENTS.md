@@ -1,10 +1,10 @@
-# Witness — Agent Behavior Linter
+# Witness — Agent Observer & Behavioral Linter
 
 ## What This Is
 
-Witness is a real-time behavioral linter for AI coding agents. It hooks into tool calls (PreToolUse / PostToolUse) and enforces workflow discipline: don't edit files you haven't read, don't commit with failing tests, don't thrash on the same file, run tests after making changes.
+Witness hooks into an agent's tool call lifecycle (PreToolUse / PostToolUse), records structured facts into SQLite, and derives useful state from them — which tests are failing, what files were edited, what broke after a change, what depends on what.
 
-**The linter is the product.** The SQLite fact store, SQL views, and briefing system all exist to serve the lint rules. This is not a general-purpose agent memory system.
+Out of the box it's a passive observer with query and briefing commands. Optionally, users can enable lint rules that warn or block the agent when it falls into bad patterns. All rules are off by default.
 
 ## Reading the Docs
 

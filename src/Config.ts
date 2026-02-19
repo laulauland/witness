@@ -18,12 +18,12 @@ export interface WitnessConfig {
 
 export const DEFAULT_CONFIG: WitnessConfig = {
   rules: {
-    no_edit_unread: { action: "warn", options: {} },
-    fix_regressions_first: { action: "warn", options: {} },
-    test_after_edits: { action: "warn", options: { threshold: 3 } },
-    no_thrashing: { action: "block", options: { threshold: 3 } },
-    no_commit_failing: { action: "block", options: {} },
-    no_pointless_rerun: { action: "warn", options: {} },
+    no_edit_unread: { action: "off", options: {} },
+    fix_regressions_first: { action: "off", options: {} },
+    test_after_edits: { action: "off", options: { threshold: 3 } },
+    no_thrashing: { action: "off", options: { threshold: 3 } },
+    no_commit_failing: { action: "off", options: {} },
+    no_pointless_rerun: { action: "off", options: {} },
     scope_check: { action: "off", options: {} },
   },
 }

@@ -5,7 +5,6 @@
     "test_after_edits": ["warn", { "threshold": 3 }],
     "no_thrashing": ["block", { "threshold": 3 }],
     "no_commit_failing": "block",
-    "no_pointless_rerun": "warn",
-    "scope_check": "off"
+    "no_pointless_rerun": "warn"
   }
 }

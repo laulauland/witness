@@ -36,7 +36,7 @@ describe("Config loading", () => {
     expect(config.rules.no_edit_unread?.action).toBe("block")
     expect(config.rules.test_after_edits?.action).toBe("off")
     // Defaults preserved for unspecified rules
-    expect(config.rules.no_commit_failing?.action).toBe("block")
+    expect(config.rules.no_commit_failing?.action).toBe("off")
   })
 
   test("loads rule actions with options", () => {
@@ -82,8 +82,8 @@ describe("Config loading", () => {
 
     const config = loadConfig(tempDir)
     // Invalid entries keep defaults
-    expect(config.rules.no_edit_unread?.action).toBe("warn")
-    expect(config.rules.test_after_edits?.action).toBe("warn")
+    expect(config.rules.no_edit_unread?.action).toBe("off")
+    expect(config.rules.test_after_edits?.action).toBe("off")
   })
 
   test("returns defaults for malformed JSON", () => {
@@ -106,7 +106,7 @@ describe("Config loading", () => {
   test("getRuleConfig returns config for known rule", () => {
     const config = DEFAULT_CONFIG
     const rc = getRuleConfig(config, "no_edit_unread")
-    expect(rc.action).toBe("warn")
+    expect(rc.action).toBe("off")
   })
 
   test("getRuleConfig returns off for unknown rule", () => {
