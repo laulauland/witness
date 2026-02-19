@@ -12,13 +12,15 @@ import { Command } from "@effect/cli"
 import { SqlClient } from "@effect/sql"
 import { Console, Effect } from "effect"
 import { DbLive } from "../Db.js"
+import { insertHookEvent } from "../HookEvents.js"
 import { applySchema } from "../Schema.js"
 import { loadConfig, getRuleConfig } from "../Config.js"
 import type { HookInput } from "../parsers/Parser.js"
 import { allRules } from "../rules/index.js"
 import type { RuleViolation } from "../rules/Rule.js"
+import { tick } from "../Clock.js"
 
-const SESSION_ID = process.env.WITNESS_SESSION ?? "default"
+const DEFAULT_SESSION_ID = "default"
 
 /**
  * Read all of stdin as a string.
@@ -41,33 +43,59 @@ const readStdin = Effect.tryPromise({
   catch: (e) => ({ _tag: "StdinError" as const, error: e }),
 })
 
-/**
- * Parse a JSON string into HookInput. Returns null on failure.
- */
-const parseHookInput = (raw: string): HookInput | null => {
+const truncate = (text: string, maxChars: number = 4000): string =>
+  text.length <= maxChars ? text : `${text.slice(0, maxChars - 3)}...`
+
+const parseRawObject = (raw: string): Record<string, unknown> | null => {
   try {
     const parsed = JSON.parse(raw)
     if (typeof parsed !== "object" || parsed === null) return null
-    if (typeof parsed.tool_name !== "string") return null
-    return {
-      hook: parsed.hook,
-      tool_name: parsed.tool_name,
-      tool_input:
-        typeof parsed.tool_input === "object" && parsed.tool_input !== null
-          ? parsed.tool_input
-          : {},
-      tool_output:
-        typeof parsed.tool_output === "string"
-          ? parsed.tool_output
-          : undefined,
-      tool_exit_code:
-        typeof parsed.tool_exit_code === "number"
-          ? parsed.tool_exit_code
-          : undefined,
-    }
+    return parsed as Record<string, unknown>
   } catch {
     return null
   }
+}
+
+/**
+ * Parse a JSON object into HookInput. Returns null on failure.
+ */
+const parseHookInput = (parsed: Record<string, unknown> | null): HookInput | null => {
+  if (!parsed) return null
+  if (typeof parsed.tool_name !== "string") return null
+
+  return {
+    hook: typeof parsed.hook === "string" ? parsed.hook : undefined,
+    session_id: typeof parsed.session_id === "string" ? parsed.session_id : undefined,
+    tool_name: parsed.tool_name,
+    tool_input:
+      typeof parsed.tool_input === "object" && parsed.tool_input !== null
+        ? (parsed.tool_input as Record<string, unknown>)
+        : {},
+    tool_output:
+      typeof parsed.tool_output === "string"
+        ? parsed.tool_output
+        : undefined,
+    tool_exit_code:
+      typeof parsed.tool_exit_code === "number"
+        ? parsed.tool_exit_code
+        : undefined,
+  }
+}
+
+const resolveSessionId = (
+  explicitSessionId: string | undefined,
+  envSessionId: string | undefined,
+  parsed: Record<string, unknown> | null
+): string => {
+  if (explicitSessionId && explicitSessionId.length > 0) return explicitSessionId
+  if (envSessionId && envSessionId.length > 0) return envSessionId
+
+  const stdinSession = parsed?.session_id
+  if (typeof stdinSession === "string" && stdinSession.length > 0) {
+    return stdinSession
+  }
+
+  return DEFAULT_SESSION_ID
 }
 
 /**
@@ -95,6 +123,32 @@ const formatBlock = (violation: RuleViolation): string =>
     },
   })
 
+const logLintEvent = (
+  sql: SqlClient.SqlClient,
+  sessionId: string,
+  toolName: string | null,
+  action: string,
+  message: string | null,
+  payload: string | null,
+  result: string | null
+): Effect.Effect<void, never, SqlClient.SqlClient> =>
+  Effect.gen(function* () {
+    const eventT = yield* tick(sessionId)
+    yield* insertHookEvent(sql, {
+      session_id: sessionId,
+      t: eventT,
+      event: "lint",
+      tool_name: toolName,
+      action,
+      message,
+      payload,
+      result,
+    })
+  }).pipe(
+    Effect.asVoid,
+    Effect.catchAll(() => Effect.void)
+  )
+
 /**
  * The core lint pipeline. Factored out for testability.
  *
@@ -106,11 +160,25 @@ export const lintPipeline = (
   configDir?: string
 ): Effect.Effect<string, never, SqlClient.SqlClient> =>
   Effect.gen(function* () {
-    const input = parseHookInput(raw)
-    if (!input) return ""
+    const parsed = parseRawObject(raw)
+    const input = parseHookInput(parsed)
+    const sql = yield* SqlClient.SqlClient
+    const sid = resolveSessionId(sessionId, process.env.WITNESS_SESSION, parsed)
+
+    if (!input) {
+      yield* logLintEvent(
+        sql,
+        sid,
+        null,
+        "parse_error",
+        "failed to parse hook input",
+        truncate(raw),
+        null
+      )
+      return ""
+    }
 
     const config = loadConfig(configDir)
-    const sid = sessionId ?? SESSION_ID
 
     // Collect violations from all applicable rules
     const violations: RuleViolation[] = []
@@ -134,16 +202,44 @@ export const lintPipeline = (
       }
     }
 
-    if (violations.length === 0) return ""
+    const payload = truncate(
+      JSON.stringify({ tool_name: input.tool_name, tool_input: input.tool_input })
+    )
+
+    if (violations.length === 0) {
+      yield* logLintEvent(sql, sid, input.tool_name, "allow", null, payload, null)
+      return ""
+    }
 
     // Block takes precedence over warn. First block wins.
     const blockViolation = violations.find((v) => v.action === "block")
     if (blockViolation) {
-      return formatBlock(blockViolation)
+      const output = formatBlock(blockViolation)
+      yield* logLintEvent(
+        sql,
+        sid,
+        input.tool_name,
+        "block",
+        `${blockViolation.ruleName}: ${blockViolation.message}`,
+        payload,
+        truncate(output)
+      )
+      return output
     }
 
     // All remaining violations are warns
-    return formatWarn(violations)
+    const output = formatWarn(violations)
+    yield* logLintEvent(
+      sql,
+      sid,
+      input.tool_name,
+      "warn",
+      violations.map((v) => `${v.ruleName}: ${v.message}`).join(" | "),
+      payload,
+      truncate(output)
+    )
+
+    return output
   }).pipe(
     Effect.catchAll(() => Effect.succeed("")),
   )

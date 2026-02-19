@@ -10,7 +10,8 @@
  *   3. Always insert a tool_calls row (raw log)
  *   4. Route to parser for structured facts (e.g., FileEvent)
  *   5. Insert structured facts with clock tick
- *   6. Exit 0
+ *   6. Emit hook_events row for `witness watch`
+ *   7. Exit 0
  *
  * On any error (parse, SQL, anything): log to stderr, exit 0.
  */
@@ -19,12 +20,13 @@ import { SqlClient } from "@effect/sql"
 import { Effect } from "effect"
 import { tick } from "../Clock.js"
 import type { Fact } from "../Facts.js"
+import { insertHookEvent } from "../HookEvents.js"
 import type { HookInput } from "../parsers/Parser.js"
 import { routeWithInput } from "../parsers/index.js"
 import { DbLive } from "../Db.js"
 import { applySchema } from "../Schema.js"
 
-const SESSION_ID = process.env.WITNESS_SESSION ?? "default"
+const DEFAULT_SESSION_ID = "default"
 
 /**
  * Read all of stdin as a string.
@@ -45,26 +47,52 @@ const readStdin = Effect.tryPromise({
   catch: (e) => ({ _tag: "StdinError" as const, error: e }),
 })
 
-/**
- * Parse a JSON string into HookInput. Returns null on failure.
- */
-const parseHookInput = (raw: string): HookInput | null => {
+const truncate = (text: string, maxChars: number = 4000): string =>
+  text.length <= maxChars ? text : `${text.slice(0, maxChars - 3)}...`
+
+const parseRawObject = (raw: string): Record<string, unknown> | null => {
   try {
     const parsed = JSON.parse(raw)
     if (typeof parsed !== "object" || parsed === null) return null
-    if (typeof parsed.tool_name !== "string") return null
-    return {
-      hook: parsed.hook,
-      tool_name: parsed.tool_name,
-      tool_input: typeof parsed.tool_input === "object" && parsed.tool_input !== null
-        ? parsed.tool_input
-        : {},
-      tool_output: typeof parsed.tool_output === "string" ? parsed.tool_output : undefined,
-      tool_exit_code: typeof parsed.tool_exit_code === "number" ? parsed.tool_exit_code : undefined,
-    }
+    return parsed as Record<string, unknown>
   } catch {
     return null
   }
+}
+
+/**
+ * Parse a JSON object into HookInput. Returns null on failure.
+ */
+const parseHookInput = (parsed: Record<string, unknown> | null): HookInput | null => {
+  if (!parsed) return null
+  if (typeof parsed.tool_name !== "string") return null
+
+  return {
+    hook: typeof parsed.hook === "string" ? parsed.hook : undefined,
+    session_id: typeof parsed.session_id === "string" ? parsed.session_id : undefined,
+    tool_name: parsed.tool_name,
+    tool_input: typeof parsed.tool_input === "object" && parsed.tool_input !== null
+      ? (parsed.tool_input as Record<string, unknown>)
+      : {},
+    tool_output: typeof parsed.tool_output === "string" ? parsed.tool_output : undefined,
+    tool_exit_code: typeof parsed.tool_exit_code === "number" ? parsed.tool_exit_code : undefined,
+  }
+}
+
+const resolveSessionId = (
+  explicitSessionId: string | undefined,
+  envSessionId: string | undefined,
+  parsed: Record<string, unknown> | null
+): string => {
+  if (explicitSessionId && explicitSessionId.length > 0) return explicitSessionId
+  if (envSessionId && envSessionId.length > 0) return envSessionId
+
+  const stdinSession = parsed?.session_id
+  if (typeof stdinSession === "string" && stdinSession.length > 0) {
+    return stdinSession
+  }
+
+  return DEFAULT_SESSION_ID
 }
 
 /**
@@ -164,21 +192,58 @@ const insertFact = (
   }
 }
 
+const logRecordEvent = (
+  sql: SqlClient.SqlClient,
+  sessionId: string,
+  toolName: string | null,
+  action: string,
+  message: string | null,
+  payload: string | null,
+  result: string | null
+): Effect.Effect<void, never, SqlClient.SqlClient> =>
+  Effect.gen(function* () {
+    const eventT = yield* tick(sessionId)
+    yield* insertHookEvent(sql, {
+      session_id: sessionId,
+      t: eventT,
+      event: "record",
+      tool_name: toolName,
+      action,
+      message,
+      payload,
+      result,
+    })
+  }).pipe(
+    Effect.asVoid,
+    Effect.catchAll(() => Effect.void)
+  )
+
 /**
  * The core record pipeline. Factored out for testability.
  */
 export const recordPipeline = (
-  raw: string
+  raw: string,
+  sessionIdOverride?: string
 ): Effect.Effect<void, never, SqlClient.SqlClient> =>
   Effect.gen(function* () {
-    const input = parseHookInput(raw)
+    const parsed = parseRawObject(raw)
+    const input = parseHookInput(parsed)
+    const sql = yield* SqlClient.SqlClient
+    const sessionId = resolveSessionId(sessionIdOverride, process.env.WITNESS_SESSION, parsed)
+
     if (!input) {
+      yield* logRecordEvent(
+        sql,
+        sessionId,
+        null,
+        "parse_error",
+        "failed to parse hook input",
+        truncate(raw),
+        null
+      )
       yield* Effect.logDebug(`witness record: failed to parse input`)
       return
     }
-
-    const sql = yield* SqlClient.SqlClient
-    const sessionId = SESSION_ID
 
     // Always record the raw tool call
     const t = yield* tick(sessionId)
@@ -186,13 +251,30 @@ export const recordPipeline = (
 
     // Route to parser for structured facts (use extended router with full input)
     const parser = routeWithInput(input)
-    if (!parser) return
+    const facts = parser ? parser(input) : []
 
-    const facts = parser(input)
     for (const fact of facts) {
       const factT = yield* tick(sessionId)
       yield* insertFact(sql, sessionId, factT, fact)
     }
+
+    const payload = truncate(
+      JSON.stringify({ tool_name: input.tool_name, tool_input: input.tool_input })
+    )
+    const parserMatched = parser !== undefined
+    const result = truncate(JSON.stringify({ parserMatched, facts: facts.length }))
+
+    yield* logRecordEvent(
+      sql,
+      sessionId,
+      input.tool_name,
+      parserMatched ? "recorded" : "tool_only",
+      parserMatched
+        ? `${facts.length} fact${facts.length === 1 ? "" : "s"} extracted`
+        : "no parser matched tool",
+      payload,
+      result
+    )
   }).pipe(
     // Catch ALL errors — never crash
     Effect.catchAll((error) =>

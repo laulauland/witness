@@ -52,6 +52,31 @@ describe("Lint pipeline", () => {
     expect(parsed.additionalContext).toContain("⚠️")
   })
 
+  test("emits hook_events row for lint decisions", async () => {
+    const result = await Effect.gen(function* () {
+      const sql = yield* SqlClient.SqlClient
+
+      yield* lintPipeline(
+        makeInput("Edit", { path: "src/unread.ts" }),
+        "s1"
+      )
+
+      return yield* sql<{ event: string; action: string; tool_name: string | null; message: string | null }>`
+        SELECT event, action, tool_name, message
+        FROM hook_events
+        WHERE session_id = 's1'
+        ORDER BY t DESC
+        LIMIT 1
+      `
+    }).pipe(Effect.provide(makeTestLayer()), Effect.runPromise)
+
+    expect(result).toHaveLength(1)
+    expect(result[0]!.event).toBe("lint")
+    expect(result[0]!.action).toBe("warn")
+    expect(result[0]!.tool_name).toBe("Edit")
+    expect(result[0]!.message).toContain("no_edit_unread")
+  })
+
   test("block violation → JSON with permissionDecision:deny", async () => {
     const tempDir = await mkdtemp(join(tmpdir(), "witness-lint-config-"))
     await writeFile(
@@ -152,6 +177,27 @@ describe("Lint pipeline", () => {
       return yield* lintPipeline(
         makeInput("Edit", { path: "src/foo.ts" }),
         "s1"
+      )
+    }).pipe(Effect.provide(makeTestLayer()), Effect.runPromise)
+
+    expect(result).toBe("")
+  })
+
+  // ── Session scoping source ───────────────────────────────
+
+  test("uses session_id from stdin when env/arg session is unset", async () => {
+    const result = await Effect.gen(function* () {
+      const sql = yield* SqlClient.SqlClient
+      // Read in stdin-session scope only
+      yield* sql`INSERT INTO file_events (session_id, t, event, file_path) VALUES ('stdin-s', 1, 'read', 'src/from-stdin.ts')`
+
+      return yield* lintPipeline(
+        JSON.stringify({
+          hook: "PreToolUse",
+          session_id: "stdin-s",
+          tool_name: "Edit",
+          tool_input: { path: "src/from-stdin.ts" },
+        })
       )
     }).pipe(Effect.provide(makeTestLayer()), Effect.runPromise)
 

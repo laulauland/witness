@@ -3,6 +3,11 @@
   "module": "src/main.ts",
   "type": "module",
   "private": true,
+  "keywords": ["pi-package", "pi-extension", "claude-plugin", "agent-linter"],
+  "pi": {
+    "extensions": ["./extensions/witness.ts"],
+    "skills": ["./skills"]
+  },
   "bin": {
     "witness": "src/main.ts"
   },

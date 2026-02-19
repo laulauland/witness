@@ -43,6 +43,31 @@ describe("Record pipeline", () => {
     expect(input.path).toBe("src/foo.ts")
   })
 
+  it("uses session_id from stdin when env/override is unset", async () => {
+    const result = await Effect.gen(function* () {
+      const sql = yield* SqlClient.SqlClient
+
+      yield* recordPipeline(JSON.stringify({
+        hook: "PostToolUse",
+        session_id: "claude-session-123",
+        tool_name: "Read",
+        tool_input: { path: "src/session.ts" },
+        tool_output: "ok",
+      }))
+
+      return yield* sql<{ session_id: string; tool_name: string }>`
+        SELECT session_id, tool_name FROM tool_calls
+      `
+    }).pipe(
+      Effect.provide(makeTestLayer()),
+      Effect.runPromise
+    )
+
+    expect(result).toHaveLength(1)
+    expect(result[0]!.session_id).toBe("claude-session-123")
+    expect(result[0]!.tool_name).toBe("Read")
+  })
+
   it("inserts tool_calls row for unknown tools (Bash)", async () => {
     const result = await Effect.gen(function* () {
       const sql = yield* SqlClient.SqlClient
@@ -85,6 +110,33 @@ describe("Record pipeline", () => {
 
     expect(result).toHaveLength(1)
     expect(result[0]!.tool_output).toBe("file contents here")
+  })
+
+  it("emits hook_events row for record", async () => {
+    const result = await Effect.gen(function* () {
+      const sql = yield* SqlClient.SqlClient
+
+      yield* recordPipeline(JSON.stringify({
+        tool_name: "Read",
+        tool_input: { path: "src/watch.ts" },
+        tool_output: "content",
+      }))
+
+      return yield* sql<{ event: string; action: string; tool_name: string | null; message: string | null }>`
+        SELECT event, action, tool_name, message
+        FROM hook_events
+        ORDER BY t DESC
+        LIMIT 1
+      `
+    }).pipe(
+      Effect.provide(makeTestLayer()),
+      Effect.runPromise
+    )
+
+    expect(result).toHaveLength(1)
+    expect(result[0]!.event).toBe("record")
+    expect(result[0]!.tool_name).toBe("Read")
+    expect(["recorded", "tool_only"]).toContain(result[0]!.action)
   })
 
   // ── File event extraction ─────────────────────────────────────
@@ -254,19 +306,17 @@ describe("Record pipeline", () => {
       Effect.runPromise
     )
 
-    // Two tool calls + two file events = 4 ticks
+    // Hook-event logging also consumes clock ticks now, so assert ordering, not exact values.
     expect(result.toolCalls).toHaveLength(2)
     expect(result.fileEvents).toHaveLength(2)
 
-    // tool_calls t values: 1 and 3 (2 and 4 are file events)
-    expect(result.toolCalls[0]!.t).toBe(1)
-    expect(result.toolCalls[1]!.t).toBe(3)
+    expect(result.toolCalls[1]!.t).toBeGreaterThan(result.toolCalls[0]!.t)
+    expect(result.fileEvents[1]!.t).toBeGreaterThan(result.fileEvents[0]!.t)
 
-    // file_events t values: 2 and 4
-    expect(result.fileEvents[0]!.t).toBe(2)
+    // Read event occurs before edit event
     expect(result.fileEvents[0]!.event).toBe("read")
-    expect(result.fileEvents[1]!.t).toBe(4)
     expect(result.fileEvents[1]!.event).toBe("edit")
+    expect(result.fileEvents[1]!.t).toBeGreaterThan(result.fileEvents[0]!.t)
   })
 
   // ── Graceful failure / never crash ────────────────────────────

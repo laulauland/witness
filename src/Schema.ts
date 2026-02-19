@@ -33,6 +33,22 @@ export const applySchema = Effect.gen(function* () {
     )
   `
 
+  // Hook execution stream (lint/record), for witness watch
+  yield* sql`
+    CREATE TABLE IF NOT EXISTS hook_events (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id  TEXT    NOT NULL,
+      t           INTEGER NOT NULL,
+      ts          TEXT    NOT NULL DEFAULT (datetime('now')),
+      event       TEXT    NOT NULL,
+      tool_name   TEXT,
+      action      TEXT    NOT NULL,
+      message     TEXT,
+      payload     TEXT,
+      result      TEXT
+    )
+  `
+
   yield* sql`
     CREATE TABLE IF NOT EXISTS file_events (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -95,6 +111,7 @@ export const applySchema = Effect.gen(function* () {
   // ── Indexes ─────────────────────────────────────────────────
 
   yield* sql`CREATE INDEX IF NOT EXISTS idx_tool_calls_session   ON tool_calls   (session_id, t)`
+  yield* sql`CREATE INDEX IF NOT EXISTS idx_hook_events_session  ON hook_events  (session_id, t)`
   yield* sql`CREATE INDEX IF NOT EXISTS idx_file_events_session  ON file_events  (session_id, t)`
   yield* sql`CREATE INDEX IF NOT EXISTS idx_file_events_path     ON file_events  (session_id, file_path)`
   yield* sql`CREATE INDEX IF NOT EXISTS idx_test_results_session ON test_results (session_id, t)`

@@ -17,6 +17,7 @@ describe("Schema", () => {
 
     expect(result).toContain("clock")
     expect(result).toContain("tool_calls")
+    expect(result).toContain("hook_events")
     expect(result).toContain("file_events")
     expect(result).toContain("test_results")
     expect(result).toContain("lint_results")
@@ -60,6 +61,7 @@ describe("Schema", () => {
     }).pipe(Effect.provide(makeTestLayer()), Effect.runPromise)
 
     expect(result).toContain("idx_tool_calls_session")
+    expect(result).toContain("idx_hook_events_session")
     expect(result).toContain("idx_file_events_session")
     expect(result).toContain("idx_file_events_path")
     expect(result).toContain("idx_test_results_session")
@@ -90,6 +92,7 @@ describe("Schema", () => {
       const sql = yield* SqlClient.SqlClient
 
       const toolCallCols = yield* sql<{ name: string }>`PRAGMA table_info(tool_calls)`
+      const hookEventCols = yield* sql<{ name: string }>`PRAGMA table_info(hook_events)`
       const fileEventCols = yield* sql<{ name: string }>`PRAGMA table_info(file_events)`
       const testResultCols = yield* sql<{ name: string }>`PRAGMA table_info(test_results)`
       const lintResultCols = yield* sql<{ name: string }>`PRAGMA table_info(lint_results)`
@@ -99,6 +102,7 @@ describe("Schema", () => {
 
       return {
         tool_calls: toolCallCols.map((r) => r.name),
+        hook_events: hookEventCols.map((r) => r.name),
         file_events: fileEventCols.map((r) => r.name),
         test_results: testResultCols.map((r) => r.name),
         lint_results: lintResultCols.map((r) => r.name),
@@ -115,6 +119,17 @@ describe("Schema", () => {
     expect(result.tool_calls).toContain("tool_name")
     expect(result.tool_calls).toContain("tool_input")
     expect(result.tool_calls).toContain("tool_output")
+
+    // hook_events
+    expect(result.hook_events).toContain("session_id")
+    expect(result.hook_events).toContain("t")
+    expect(result.hook_events).toContain("ts")
+    expect(result.hook_events).toContain("event")
+    expect(result.hook_events).toContain("tool_name")
+    expect(result.hook_events).toContain("action")
+    expect(result.hook_events).toContain("message")
+    expect(result.hook_events).toContain("payload")
+    expect(result.hook_events).toContain("result")
 
     // file_events
     expect(result.file_events).toContain("session_id")
@@ -167,6 +182,8 @@ describe("Schema", () => {
       // Insert into each table
       yield* sql`INSERT INTO tool_calls (session_id, t, tool_name, tool_input)
                   VALUES ('s1', 1, 'Edit', '{"path":"a.ts"}')`
+      yield* sql`INSERT INTO hook_events (session_id, t, event, tool_name, action)
+                  VALUES ('s1', 1, 'record', 'Edit', 'recorded')`
       yield* sql`INSERT INTO file_events (session_id, t, event, file_path)
                   VALUES ('s1', 1, 'edit', 'a.ts')`
       yield* sql`INSERT INTO test_results (session_id, t, test_name, outcome)
@@ -181,6 +198,8 @@ describe("Schema", () => {
       // Query each
       const tc = yield* sql`SELECT * FROM tool_calls`
       expect(tc).toHaveLength(1)
+      const he = yield* sql`SELECT * FROM hook_events`
+      expect(he).toHaveLength(1)
       const fe = yield* sql`SELECT * FROM file_events`
       expect(fe).toHaveLength(1)
       const tr = yield* sql`SELECT * FROM test_results`

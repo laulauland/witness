@@ -8,6 +8,7 @@ import { InitCommand } from "./commands/Init.js"
 import { LintCommand } from "./commands/Lint.js"
 import { QueryCommand } from "./commands/Query.js"
 import { RecordCommand } from "./commands/Record.js"
+import { WatchCommand } from "./commands/Watch.js"
 
 const command = Command.make("witness").pipe(
   Command.withDescription("Behavioral linter for AI coding agents"),
@@ -17,6 +18,7 @@ const command = Command.make("witness").pipe(
     LintCommand,
     BriefingCommand,
     QueryCommand,
+    WatchCommand,
   ])
 )
 

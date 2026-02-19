@@ -15,6 +15,7 @@ describe("witness CLI", () => {
     expect(text).toContain("lint")
     expect(text).toContain("briefing")
     expect(text).toContain("query")
+    expect(text).toContain("watch")
   })
 
   test("init subcommand runs without error", async () => {

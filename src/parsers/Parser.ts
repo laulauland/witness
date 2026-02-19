@@ -11,6 +11,7 @@ import type { Fact } from "../Facts.js"
  */
 export interface HookInput {
   readonly hook?: string
+  readonly session_id?: string
   readonly tool_name: string
   readonly tool_input: Record<string, unknown>
   readonly tool_output?: string

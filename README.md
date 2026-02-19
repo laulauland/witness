@@ -27,6 +27,23 @@ The plugin automatically wires up all three hooks:
 - **PreToolUse** → `witness lint` (evaluates rules, if any are enabled)
 - **SessionStart** → `witness init` (creates the DB if needed)
 
+### As a pi coding agent extension (pi-mono)
+
+```bash
+# one-off run
+pi -e /path/to/witness/extensions/witness.ts
+
+# or install as a package
+pi install /path/to/witness
+```
+
+The extension mirrors the Claude plugin behavior:
+- `session_start` / `session_switch` → `witness init`
+- `tool_call` → `witness lint` (can block tool execution)
+- `tool_result` → `witness record`
+
+Warnings are shown in the pi TUI as notifications. Block rules return a tool block reason directly to pi.
+
 ### Manual hook setup
 
 If you prefer to configure hooks yourself, add this to your `.claude/settings.json`:
@@ -104,6 +121,21 @@ Markdown summary of the current session: failing tests, regressions, thrashing f
 | `blast` | Reverse dependencies | `<file>` |
 | `deps` | Forward dependencies | `<file>` |
 
+### `witness watch`
+
+Tail incoming hook events (`lint` and `record`) in real time.
+
+```bash
+witness watch                  # human-readable stream
+witness watch --format json    # NDJSON stream for tooling/filtering
+```
+
+Optional:
+
+```bash
+witness watch --poll-ms 200
+```
+
 ## Lint Rules
 
 All rules are **off by default**. Enable them in `.witness.json` in your project root:
@@ -143,7 +175,7 @@ Witness automatically parses output from these tools:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `WITNESS_DB` | `.witness/witness.db` | Path to the SQLite database |
-| `WITNESS_SESSION` | `default` | Session ID for scoping facts and rules |
+| `WITNESS_SESSION` | `default` | Session ID for scoping facts and rules (if unset, `lint`/`record` use `session_id` from hook stdin when available) |
 
 ## Architecture
 
